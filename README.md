@@ -60,7 +60,7 @@ gh api --method POST -H "Accept: application/vnd.github+json" \
 1. 打开 <https://github.com/zengpenghui420-glitch/mbti-64/settings/pages>
 2. Build and deployment → Source 选 **GitHub Actions**
 3. 打开 Actions 里的 **Deploy GitHub Pages**。如果第一次推送时 Pages 还没打开、工作流失败了，点 **Re-run jobs**。
-4. 成功后访问 <https://zengpenghui420-glitch.github.io/mbti-64/>，页面标题应为「64型人格测试 · 结果直出」。
+4. 成功后访问 <https://zengpenghui420-glitch.github.io/mbti-64/>，页面标题应为「64型人格测试」。
 
 ## 可选邀请码
 

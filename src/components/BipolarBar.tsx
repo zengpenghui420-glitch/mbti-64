@@ -6,14 +6,16 @@ export function BipolarBar({ score }: { score: DimensionScore }) {
   const positiveWins = score.letter === meta.positive.letter;
   return (
     <div className="grid gap-1.5">
-      <div className="flex items-baseline justify-between gap-3 text-sm">
-        <span className="text-muted-foreground">{meta.title}</span>
-        <span className="font-medium">
-          偏向{score.name} {score.letter}
-          <span className="text-muted-foreground"> · {score.lean}%</span>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm text-muted-foreground">{meta.title}</span>
+        <span className="text-lg font-semibold tabular-nums leading-none">
+          {score.lean}%
+          <span className="ml-1.5 text-sm font-medium">
+            {score.name} {score.letter}
+          </span>
         </span>
       </div>
-      <div className="relative h-3 rounded-full bg-muted">
+      <div className="relative h-3.5 rounded-full bg-muted">
         <div className="absolute top-0 bottom-0 left-1/2 w-px bg-foreground/15" />
         <div
           className="absolute top-0 h-full rounded-full bg-primary/80"

@@ -1,6 +1,6 @@
 import { DIMENSIONS } from "@/data/dimensions";
 import { getProfile } from "@/data/profiles";
-import { DISCLAIMER, IDENTITY, READING_GUIDE, STANCE } from "@/data/suffixes";
+import { IDENTITY, STANCE } from "@/data/suffixes";
 import { countHan, type QuizResult } from "@/lib/score";
 
 export interface ReportBlock {
@@ -41,8 +41,8 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
     {
       heading: "结果总览",
       paragraphs: [
-        `${who}的主类型是 ${result.type}「${profile.cnName}」，大家也常叫这个类型${profile.nicknames.map((item) => `「${item}」`).join("")}。头像用的是十六型里的「${profile.cnName}」，坚定/敏感和协同/主见不再另画一张脸。在十六种主类型之上，这次还有两层后缀：${identity.name}（${result.identity}）与${stance.name}（${result.stance}），合在一起写成 ${result.code}，也就是「${subtypeLabel(result)}」。这份画像标题是「${profile.name}」。${profile.epithet}`,
-        `六个维度的结算是：${scoreLine}。这些百分比来自刚刚答完的 108 题。每题都按更接近平时的反应计分，没有隐藏题，也没有答完再付费才能看见的部分。结果在最后一题结束后立即生成。`,
+        `${who}是 ${result.code}「${profile.cnName}」，也常被叫做${profile.nicknames.map((item) => `「${item}」`).join("")}。主类型是 ${result.type}，再加上「${identity.name}」和「${stance.name}」，合在一起是「${subtypeLabel(result)}」。${profile.epithet}`,
+        `六个维度现在是：${scoreLine}。`,
         profile.blurb,
       ],
     },
@@ -55,7 +55,7 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
       paragraphs: [profile.scenes],
     },
     {
-      heading: "六个维度分别说了什么",
+      heading: "六个维度",
       paragraphs: DIMENSIONS.map((meta) => {
         const score = result.scores[meta.id];
         return `「${meta.title}」${score.text}`;
@@ -64,14 +64,14 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
     {
       heading: `后缀一 · ${identity.name}（${identity.letter}）`,
       paragraphs: [
-        `${identity.short}。这一层不改写你的四个字母，它描述压力和评价到来时，你的自我感更稳，还是更容易被牵动。`,
+        `${identity.short}。`,
         ...identity.body,
       ],
     },
     {
       heading: `后缀二 · ${stance.name}（${stance.letter}）`,
       paragraphs: [
-        `${stance.short}。这一层看的是你在人群里的默认站位：先找配合，还是先把方向立住。它和外向、内向不是同一件事。`,
+        `${stance.short}。`,
         ...stance.body,
       ],
     },
@@ -79,7 +79,7 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
       heading: "两层后缀叠在一起",
       paragraphs: [
         profile.combo[result.suffix],
-        `所以 ${result.code} 不是一个更高级的 ${result.type}，而是「${profile.cnName}」在「${identity.name}」和「${stance.name}」同时出现时的一种生活版本。若你觉得某一层很像、另一层只是勉强，以鲜明度更高的那一层为准，靠近 50% 的字母可以轻轻拿着。`,
+        `所以 ${result.code} 是「${profile.cnName}」同时带着「${identity.name}」和「${stance.name}」的生活版本。`,
       ],
     },
     {
@@ -94,16 +94,8 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
     },
     {
       heading: "可以很小的练习",
-      paragraphs: ["不必一次做完。选一条放到下一周，比把报告收藏起来更接近“结果直出”的用法。"],
+      paragraphs: ["选一条放到下一周就够了。"],
       bullets: profile.practices,
-    },
-    {
-      heading: "怎么阅读这份结果",
-      paragraphs: READING_GUIDE,
-    },
-    {
-      heading: "关于收费与用途",
-      paragraphs: DISCLAIMER,
     },
   ];
 
@@ -164,7 +156,6 @@ export function reportToHtml(result: QuizResult, nickname?: string): string {
 <body>
   <main>
     <header>
-      <p class="sub">64 型人格测试 · 结果直出 · 无二次收费</p>
       <p class="code">${escapeHtml(result.code)}</p>
       <h1>${escapeHtml(getProfile(result.type).cnName)}</h1>
       <p class="sub">${escapeHtml(getProfile(result.type).nicknames.join(" · "))}</p>
@@ -172,7 +163,7 @@ export function reportToHtml(result: QuizResult, nickname?: string): string {
       <p class="sub">${escapeHtml(report.title)} · 约 ${report.han} 字</p>
     </header>
     ${body}
-    <footer>娱乐向自我观察笔记。可在浏览器中选择打印，并存储为 PDF。本文件即完整报告，无需再解锁。</footer>
+    <footer>可在浏览器中选择打印，并存储为 PDF。</footer>
   </main>
 </body>
 </html>`;

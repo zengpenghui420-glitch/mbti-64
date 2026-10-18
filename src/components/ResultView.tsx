@@ -7,7 +7,7 @@ import { DIMENSIONS } from "@/data/dimensions";
 import { getProfile } from "@/data/profiles";
 import { IDENTITY, STANCE } from "@/data/suffixes";
 import { temperamentOf } from "@/data/temperament";
-import { downloadReport, subtypeLabel } from "@/lib/report";
+import { downloadReport } from "@/lib/report";
 import type { QuizResult } from "@/lib/score";
 
 export function ResultView({
@@ -30,7 +30,7 @@ export function ResultView({
   const stance = STANCE[result.stance];
   const temp = temperamentOf(result.type);
   const [copied, setCopied] = useState(false);
-  const summary = `我的结果是 ${result.code}「${profile.cnName} · ${profile.nicknames.join(" / ")} · ${identity.name}${stance.name}」。108 题答完即出，无二次收费。`;
+  const summary = `${result.code} ${profile.cnName} · ${profile.nicknames.join(" / ")} · ${identity.name}${stance.name}`;
 
   async function copySummary() {
     try {
@@ -47,14 +47,8 @@ export function ResultView({
         <Button type="button" variant="ghost" onClick={onHome}>
           回到首页
         </Button>
-        <span className="text-xs text-muted-foreground">结果直出 · 无二次收费</span>
+        {demo ? <span className="text-xs text-muted-foreground">示例结果</span> : null}
       </header>
-
-      {demo ? (
-        <p className="rounded-2xl bg-secondary px-4 py-3 text-sm leading-6 text-secondary-foreground">
-          这是一份示例结果，用来预览 64 型和报告长什么样，不是你的作答。
-        </p>
-      ) : null}
 
       <section
         className="overflow-hidden rounded-[32px] px-4 pb-6 pt-2 shadow-sm ring-1 ring-foreground/10"
@@ -67,7 +61,7 @@ export function ResultView({
         />
         <div className="-mt-2 text-center">
           <p className="text-sm font-semibold" style={{ color: temp.ink }}>
-            {temp.name} · 十六型画像
+            {temp.name}
           </p>
           <p className="font-display mt-1 text-5xl tracking-wide">{result.code}</p>
           <h1 className="mt-1 text-3xl font-semibold">{profile.cnName}</h1>
@@ -86,9 +80,6 @@ export function ResultView({
               {stance.letter} {stance.name}
             </span>
           </div>
-          <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            64 型沿用这张「{profile.cnName}」画像。{subtypeLabel(result)}
-          </p>
         </div>
       </section>
 
@@ -136,7 +127,7 @@ export function ResultView({
 
       <div className="no-print sticky bottom-3 z-10 grid gap-2 rounded-[28px] bg-white/95 p-3 shadow-lg ring-1 ring-foreground/10 backdrop-blur">
         <Button type="button" variant="gold" size="xl" onClick={onOpenReport}>
-          查看千字报告
+          查看完整报告
         </Button>
         <div className="grid grid-cols-2 gap-2">
           <Button type="button" variant="outline" className="bg-white" onClick={() => downloadReport(result, nickname)}>

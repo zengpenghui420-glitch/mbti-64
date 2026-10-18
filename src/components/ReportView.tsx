@@ -46,7 +46,8 @@ export function ReportView({
           style={{ background: `linear-gradient(180deg, ${temp.wash} 0%, #ffffff 70%)` }}
         >
           <p className="text-sm font-medium" style={{ color: temp.ink }}>
-            {temp.name} · 64 型人格测试 · 结果直出 · 无二次收费
+            {temp.name}
+            {demo ? " · 示例结果" : ""}
           </p>
           <div className="mt-2 flex items-center gap-3">
             <PersonaAvatar code={result.code} className="w-24 shrink-0" label={report.subtitle} />
@@ -58,17 +59,14 @@ export function ReportView({
               </p>
             </div>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {report.title} · 约 {report.han} 字
-            {demo ? " · 示例数据" : ""}
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">{report.title}</p>
           <label className="no-print mt-4 grid gap-1 text-sm">
-            <span className="text-muted-foreground">可选：报告里怎么称呼你</span>
+            <span className="text-muted-foreground">称呼</span>
             <input
               value={nickname}
               maxLength={16}
               onChange={(event) => onNickname(event.target.value)}
-              placeholder="留空则写作「你」"
+              placeholder="你的名字"
               className="h-11 rounded-full border bg-white px-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
             />
           </label>

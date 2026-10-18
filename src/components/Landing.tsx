@@ -9,7 +9,7 @@ import { temperamentOf } from "@/data/temperament";
 const FEATURES = [
   { title: "108 道情境题", text: "六个维度交错出现，按平时的你来选，大约十分钟。" },
   { title: "64 型当场给", text: "16 种主类型，再加坚定/敏感、协同/主见两层后缀。" },
-  { title: "千字报告带走", text: "答完即可阅读、下载 HTML，或打印存成 PDF。没有第二步收费。" },
+  { title: "完整报告", text: "可以阅读、下载 HTML，或打印存成 PDF。" },
 ];
 
 const SAMPLES = ["INTJ-AC", "ENFP-TC", "ISFJ-AH", "ESTP-TH", "INFJ-TC", "ENTP-AH"];
@@ -45,9 +45,6 @@ export function Landing({
           <span className="grid size-9 place-items-center rounded-2xl bg-white shadow-sm ring-1 ring-foreground/10">64</span>
           <span>人格小测试</span>
         </div>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-muted-foreground ring-1 ring-foreground/10">
-          全程无二次收费
-        </span>
       </header>
 
       <section className="grid items-center gap-6 md:grid-cols-[1.05fr_.95fr] md:gap-10">
@@ -60,7 +57,7 @@ export function Landing({
             <span className="mt-2 block text-[1.7rem] tracking-wide md:text-4xl">人格测试</span>
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
-            十六种主类型之下，再用「坚定 / 敏感」和「协同 / 主见」往里看一层。108 题答完立刻出结果，报告直接带走。
+            十六种主类型之下，再用「坚定 / 敏感」和「协同 / 主见」往里看一层。
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:max-w-sm">
             {locked ? (
@@ -83,15 +80,12 @@ export function Landing({
               </form>
             ) : (
 <Button type="button" variant="gold" size="xl" onClick={onStart}>
-                  {resume === "done" ? "查看上次结果" : resume === "partial" ? "继续未完成的测试" : "开始测试，答完即出"}
+                  {resume === "done" ? "查看上次结果" : resume === "partial" ? "继续未完成的测试" : "开始测试"}
                 </Button>
             )}
             <Button type="button" variant="outline" size="xl" className="bg-white/80" onClick={onDemo}>
-              先看一份示例结果
+              示例结果
             </Button>
-            <p className="text-center text-xs leading-5 text-muted-foreground">
-              示例不是你的结果。正式测试中途不会要求付费解锁。
-            </p>
           </div>
         </div>
         <div className="order-1 md:order-2">
@@ -128,7 +122,7 @@ export function Landing({
       <section className="pb-8">
         <h2 className="text-lg font-semibold">十六型画像</h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          紫 NT 分析师、绿 NF 外交官、蓝 SJ 守护者、黄 SP 探险家。64 型结果沿用对应的四个字母画像。
+          紫 NT 分析师、绿 NF 外交官、蓝 SJ 守护者、黄 SP 探险家。
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3">
           {TYPE_CODES.map((code) => {

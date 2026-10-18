@@ -86,9 +86,7 @@ export function Quiz({
               {pauseAt === 36 ? "已经走完三分之一" : "已经过半了"}
             </h2>
             <p className="leading-7 text-muted-foreground">
-              {pauseAt === 36
-                ? "后面仍是同一套题。不会突然弹出付费，也不会先给半份结果。答完 108 题，64 型会一次给你。"
-                : "还剩 36 题。全部答完后立刻给出主类型、后缀和可以带走的千字报告，中间不另收费。"}
+              {pauseAt === 36 ? "后面仍是同一套题。按平时的你继续选。" : "还剩 36 题。答完就能看到你的类型。"}
             </p>
             <Button
               type="button"
@@ -174,12 +172,12 @@ function QuizFrame({
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-xl flex-col gap-4 px-4 py-4">
       <header className="grid gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <Button type="button" variant="ghost" className="px-2" onClick={onBack ?? onExit}>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <Button type="button" variant="ghost" className="justify-self-start px-2" onClick={onBack ?? onExit}>
             {onBack ? "上一题" : "返回"}
           </Button>
           <span className="text-sm font-medium tabular-nums">{indexLabel}</span>
-          <span className="text-xs text-muted-foreground">无二次收费</span>
+          <span />
         </div>
         <Progress value={progress} aria-label="作答进度" className="h-2 bg-white" />
       </header>
