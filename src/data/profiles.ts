@@ -2,6 +2,10 @@ import type { Suffix, TypeCode } from "@/lib/score";
 
 export interface TypeProfile {
   code: TypeCode;
+  /** 十六型里常见的中文类型名。 */
+  cnName: string;
+  /** 第一张参考图里的流行昵称。画像仍按四个字母，不按昵称另画。 */
+  nicknames: string[];
   name: string;
   epithet: string;
   blurb: string;
@@ -17,6 +21,8 @@ export interface TypeProfile {
 export const PROFILES: Record<TypeCode, TypeProfile> = {
   INTJ: {
     code: "INTJ",
+    cnName: "建筑师",
+    nicknames: ["紫老头", "紫薯"],
     name: "远见筑梦",
     epithet: "先把路看完，再决定要不要出发。",
     blurb:
@@ -41,6 +47,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   INTP: {
     code: "INTP",
+    cnName: "逻辑学家",
+    nicknames: ["瓶子姐", "哲学家", "温暖机器人"],
     name: "概念漫游",
     epithet: "与其马上表态，不如先把模型转一遍。",
     blurb:
@@ -65,6 +73,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ENTJ: {
     code: "ENTJ",
+    cnName: "指挥官",
+    nicknames: ["大姐头", "大老板", "卷王"],
     name: "航向掌舵",
     epithet: "终点清楚了，人就可以组织起来。",
     blurb:
@@ -89,6 +99,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ENTP: {
     code: "ENTP",
+    cnName: "辩论家",
+    nicknames: ["骨折没溜", "发明家", "杠精"],
     name: "火花试探",
     epithet: "死局最怕一个还没被问过的问题。",
     blurb:
@@ -113,6 +125,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   INFJ: {
     code: "INFJ",
+    cnName: "提倡者",
+    nicknames: ["绿老头", "老绿茶"],
     name: "灯塔引路",
     epithet: "安静地照见别人还没说出口的方向。",
     blurb:
@@ -137,6 +151,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   INFP: {
     code: "INFP",
+    cnName: "调停者",
+    nicknames: ["小蝴蝶", "治愈者"],
     name: "内心诗篇",
     epithet: "一件事值不值得做，先问它像不像自己。",
     blurb:
@@ -161,6 +177,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ENFJ: {
     code: "ENFJ",
+    cnName: "主人公",
+    nicknames: ["大剑客", "班主任"],
     name: "温度凝聚",
     epithet: "让人愿意为同一个心意站到一起。",
     blurb:
@@ -185,6 +203,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ENFP: {
     code: "ENFP",
+    cnName: "竞选者",
+    nicknames: ["快乐小狗"],
     name: "灵感星火",
     epithet: "可能性这东西，撒开了才知道哪颗会着。",
     blurb:
@@ -209,6 +229,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ISTJ: {
     code: "ISTJ",
+    cnName: "物流师",
+    nicknames: ["蓝老头", "机器人", "公务员"],
     name: "秩序守望",
     epithet: "答应过的事，要能被核对，也能被交付。",
     blurb:
@@ -233,6 +255,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ISFJ: {
     code: "ISFJ",
+    cnName: "守护者",
+    nicknames: ["小护士"],
     name: "细心护持",
     epithet: "别人随口一提的需要，你会记得。",
     blurb:
@@ -257,6 +281,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ESTJ: {
     code: "ESTJ",
+    cnName: "管理者",
+    nicknames: ["尺子姐", "总经理", "执行官"],
     name: "落地推进",
     epithet: "散着的人和事，可以被排成进度。",
     blurb:
@@ -281,6 +307,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ESFJ: {
     code: "ESFJ",
+    cnName: "执政官",
+    nicknames: ["蛋糕姐", "男妈妈", "管家"],
     name: "人情纽带",
     epithet: "场面要热，每个人也要有自己的位置。",
     blurb:
@@ -305,6 +333,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ISTP: {
     code: "ISTP",
+    cnName: "鉴赏家",
+    nicknames: ["电钻哥", "酷哥", "酷姐"],
     name: "巧手拆解",
     epithet: "先看它怎么转，再决定动哪一颗螺丝。",
     blurb:
@@ -329,6 +359,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ISFP: {
     code: "ISFP",
+    cnName: "冒险家",
+    nicknames: ["小画家", "艺术家"],
     name: "感官诗行",
     epithet: "好不好，身体和审美常常先知道。",
     blurb:
@@ -353,6 +385,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ESTP: {
     code: "ESTP",
+    cnName: "企业家",
+    nicknames: ["墨镜哥", "显眼包", "挑战者"],
     name: "现场行动",
     epithet: "变化里总有一手，现在就能用。",
     blurb:
@@ -377,6 +411,8 @@ export const PROFILES: Record<TypeCode, TypeProfile> = {
   },
   ESFP: {
     code: "ESFP",
+    cnName: "表演者",
+    nicknames: ["锤子姐", "开心果", "小太阳"],
     name: "当场星光",
     epithet: "把眼下这一小段，活成值得记住的。",
     blurb:

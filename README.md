@@ -16,11 +16,17 @@ npm run dev
 
 ## 界面
 
-手机宽度下的开始页和结果页：
+手机宽度下的开始页，以及四个气质分组的结果页（紫 NT、绿 NF、蓝 SJ、黄 SP）。头像是按十六型新画的扁平几何形象，64 型后缀沿用同一张主类型画像。
 
 ![开始页](docs/screenshots/start.png)
 
-![结果页](docs/screenshots/result.png)
+![结果页 · 分析师 INTJ](docs/screenshots/result-nt.png)
+
+![结果页 · 外交官 ENFP](docs/screenshots/result-nf.png)
+
+![结果页 · 守护者 ISTJ](docs/screenshots/result-sj.png)
+
+![结果页 · 探险家 ESTP](docs/screenshots/result-sp.png)
 
 生产构建：
 

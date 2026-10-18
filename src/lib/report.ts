@@ -21,7 +21,7 @@ export function subtypeLabel(result: QuizResult): string {
   const profile = getProfile(result.type);
   const identity = IDENTITY[result.identity].name;
   const stance = STANCE[result.stance].name;
-  return `${profile.name} · ${identity}${stance}`;
+  return `${profile.cnName} · ${identity}${stance}`;
 }
 
 export function buildReport(result: QuizResult, nickname?: string): BuiltReport {
@@ -30,7 +30,7 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
   const stance = STANCE[result.stance];
   const who = nickname?.trim() ? nickname.trim() : "你";
   const title = `${who}的 64 型观察笔记`;
-  const subtitle = `${result.code}　${profile.name} · ${identity.name}${stance.name}`;
+  const subtitle = `${result.code}　${profile.cnName} · ${profile.nicknames.join(" / ")}`;
 
   const scoreLine = DIMENSIONS.map((meta) => {
     const score = result.scores[meta.id];
@@ -41,7 +41,7 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
     {
       heading: "结果总览",
       paragraphs: [
-        `${who}的主类型是 ${result.type}「${profile.name}」。在十六种主类型之上，这次还有两层后缀：${identity.name}（${result.identity}）与${stance.name}（${result.stance}），合在一起写成 ${result.code}，也就是「${subtypeLabel(result)}」。${profile.epithet}`,
+        `${who}的主类型是 ${result.type}「${profile.cnName}」，大家也常叫这个类型${profile.nicknames.map((item) => `「${item}」`).join("")}。头像用的是十六型里的「${profile.cnName}」，坚定/敏感和协同/主见不再另画一张脸。在十六种主类型之上，这次还有两层后缀：${identity.name}（${result.identity}）与${stance.name}（${result.stance}），合在一起写成 ${result.code}，也就是「${subtypeLabel(result)}」。这份画像标题是「${profile.name}」。${profile.epithet}`,
         `六个维度的结算是：${scoreLine}。这些百分比来自刚刚答完的 108 题。每题都按更接近平时的反应计分，没有隐藏题，也没有答完再付费才能看见的部分。结果在最后一题结束后立即生成。`,
         profile.blurb,
       ],
@@ -79,7 +79,7 @@ export function buildReport(result: QuizResult, nickname?: string): BuiltReport 
       heading: "两层后缀叠在一起",
       paragraphs: [
         profile.combo[result.suffix],
-        `所以 ${result.code} 不是一个更高级的 ${result.type}，而是 ${profile.name} 在「${identity.name}」和「${stance.name}」同时出现时的一种生活版本。若你觉得某一层很像、另一层只是勉强，以鲜明度更高的那一层为准，靠近 50% 的字母可以轻轻拿着。`,
+        `所以 ${result.code} 不是一个更高级的 ${result.type}，而是「${profile.cnName}」在「${identity.name}」和「${stance.name}」同时出现时的一种生活版本。若你觉得某一层很像、另一层只是勉强，以鲜明度更高的那一层为准，靠近 50% 的字母可以轻轻拿着。`,
       ],
     },
     {
@@ -166,7 +166,9 @@ export function reportToHtml(result: QuizResult, nickname?: string): string {
     <header>
       <p class="sub">64 型人格测试 · 结果直出 · 无二次收费</p>
       <p class="code">${escapeHtml(result.code)}</p>
-      <h1>${escapeHtml(report.subtitle)}</h1>
+      <h1>${escapeHtml(getProfile(result.type).cnName)}</h1>
+      <p class="sub">${escapeHtml(getProfile(result.type).nicknames.join(" · "))}</p>
+      <p class="sub">${escapeHtml(report.subtitle)}</p>
       <p class="sub">${escapeHtml(report.title)} · 约 ${report.han} 字</p>
     </header>
     ${body}

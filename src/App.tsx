@@ -10,14 +10,39 @@ import { DEMO_CODE, synthesizeAnswers } from "@/lib/demo";
 import { scoreAnswers } from "@/lib/score";
 import { freshState, loadState, saveState, type SaveState } from "@/lib/storage";
 
+const DEMO_HASH = /^#\/demo(?:\/([IE][NS][TF][JP]-(?:AC|AH|TC|TH))(\/report)?)?$/;
+
+function demoFromHash(hash: string): { code: string; view: "result" | "report" } | null {
+  const match = hash.match(DEMO_HASH);
+  if (!match) return null;
+  return { code: match[1] ?? DEMO_CODE, view: match[2] ? "report" : "result" };
+}
+
 export default function App() {
   const [state, setState] = useState<SaveState>(() => {
     const saved = loadState();
-    if (window.location.hash === "#/demo") {
-      return { ...saved, view: "result", demo: true, answers: synthesizeAnswers(DEMO_CODE) };
+    const demo = demoFromHash(window.location.hash);
+    if (demo) {
+      return { ...saved, view: demo.view, demo: true, answers: synthesizeAnswers(demo.code) };
     }
     return saved;
   });
+
+  useEffect(() => {
+    function onHash() {
+      const demo = demoFromHash(window.location.hash);
+      if (!demo) return;
+      setState((current) => ({
+        ...current,
+        view: demo.view,
+        demo: true,
+        answers: synthesizeAnswers(demo.code),
+        index: QUESTIONS.length - 1,
+      }));
+    }
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   useEffect(() => {
     saveState(state);

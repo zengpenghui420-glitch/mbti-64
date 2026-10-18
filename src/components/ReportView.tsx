@@ -2,6 +2,8 @@ import { PersonaAvatar } from "@/components/Avatar";
 import { BipolarBar } from "@/components/BipolarBar";
 import { Button } from "@/components/ui/button";
 import { DIMENSIONS } from "@/data/dimensions";
+import { getProfile } from "@/data/profiles";
+import { temperamentOf } from "@/data/temperament";
 import { downloadReport, buildReport } from "@/lib/report";
 import type { QuizResult } from "@/lib/score";
 
@@ -19,6 +21,8 @@ export function ReportView({
   demo: boolean;
 }) {
   const report = buildReport(result, nickname);
+  const profile = getProfile(result.type);
+  const temp = temperamentOf(result.type);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-4 pb-16">
@@ -37,11 +41,24 @@ export function ReportView({
       </div>
 
       <article id="report-sheet" className="grid gap-4">
-        <header className="rounded-[28px] bg-white/90 p-6 shadow-sm ring-1 ring-foreground/10">
-          <p className="text-sm text-muted-foreground">64 型人格测试 · 结果直出 · 无二次收费</p>
-          <p className="font-display mt-2 text-5xl tracking-wide">{result.code}</p>
-          <h1 className="mt-2 text-2xl font-semibold">{report.subtitle}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <header
+          className="rounded-[28px] p-6 shadow-sm ring-1 ring-foreground/10"
+          style={{ background: `linear-gradient(180deg, ${temp.wash} 0%, #ffffff 70%)` }}
+        >
+          <p className="text-sm font-medium" style={{ color: temp.ink }}>
+            {temp.name} · 64 型人格测试 · 结果直出 · 无二次收费
+          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <PersonaAvatar code={result.code} className="w-24 shrink-0" label={report.subtitle} />
+            <div>
+              <p className="font-display text-4xl tracking-wide">{result.code}</p>
+              <h1 className="mt-1 text-2xl font-semibold">{profile.cnName}</h1>
+              <p className="text-sm font-medium" style={{ color: temp.ink }}>
+                {profile.nicknames.join(" · ")}
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
             {report.title} · 约 {report.han} 字
             {demo ? " · 示例数据" : ""}
           </p>
@@ -57,13 +74,10 @@ export function ReportView({
           </label>
         </header>
 
-        <div className="flex items-center gap-4 rounded-[28px] bg-white/90 p-4 ring-1 ring-foreground/10">
-          <PersonaAvatar code={result.code} className="w-28 shrink-0" label={report.subtitle} />
-          <div className="grid flex-1 gap-3">
-            {DIMENSIONS.map((meta) => (
-              <BipolarBar key={meta.id} score={result.scores[meta.id]} />
-            ))}
-          </div>
+        <div className="grid gap-3 rounded-[28px] bg-white/90 p-4 ring-1 ring-foreground/10">
+          {DIMENSIONS.map((meta) => (
+            <BipolarBar key={meta.id} score={result.scores[meta.id]} />
+          ))}
         </div>
 
         {report.blocks.map((block) => (

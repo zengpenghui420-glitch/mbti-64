@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { AvatarStage } from "@/components/Avatar";
+import { AvatarStage, PersonaAvatar } from "@/components/Avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { accessConfig } from "@/config";
+import { getProfile, TYPE_CODES } from "@/data/profiles";
+import { temperamentOf } from "@/data/temperament";
 
 const FEATURES = [
   { title: "108 道情境题", text: "六个维度交错出现，按平时的你来选，大约十分钟。" },
@@ -121,6 +123,33 @@ export function Landing({
         <p className="mt-6 max-w-3xl text-xs leading-6 text-muted-foreground">
           结果只适合聊天、自我观察和写作灵感，不是心理诊断，也不用于招聘。四个字母是流行文化里的类型说法；A/T、C/H 是本测试自己的两层后缀。
         </p>
+      </section>
+
+      <section className="pb-8">
+        <h2 className="text-lg font-semibold">十六型画像</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          紫 NT 分析师、绿 NF 外交官、蓝 SJ 守护者、黄 SP 探险家。64 型结果沿用对应的四个字母画像。
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {TYPE_CODES.map((code) => {
+            const profile = getProfile(code);
+            const temp = temperamentOf(code);
+            return (
+              <article key={code} className="overflow-hidden rounded-[28px] shadow-sm ring-1 ring-foreground/5" style={{ background: temp.wash }}>
+                <PersonaAvatar code={code} label={`${profile.cnName}，${profile.nicknames.join("、")}`} />
+                <div className="px-3 pb-3 text-center">
+                  <p className="text-xs font-medium" style={{ color: temp.ink }}>
+                    {temp.name} · {code}
+                  </p>
+                  <h3 className="text-base font-semibold">{profile.cnName}</h3>
+                  <p className="text-xs leading-5" style={{ color: temp.ink }}>
+                    {profile.nicknames.join(" · ")}
+                  </p>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </section>
     </div>
   );

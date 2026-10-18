@@ -1,5 +1,5 @@
 import { QUESTIONS } from "@/data/questions";
-import { TYPE_CODES } from "@/data/profiles";
+import { getProfile, TYPE_CODES } from "@/data/profiles";
 import { synthesizeAnswers } from "@/lib/demo";
 import { buildReport } from "@/lib/report";
 import { countHan, scoreAnswers, type TypeCode } from "@/lib/score";
@@ -57,5 +57,20 @@ describe("reports", () => {
 
   it("counts han characters without latin noise", () => {
     expect(countHan("INTJ 坚定协同")).toBe(4);
+  });
+
+  it("prints the Chinese type name and nicknames on every report", () => {
+    for (const type of TYPE_CODES) {
+      const profile = getProfile(type);
+      expect(profile.cnName.length).toBeGreaterThan(1);
+      expect(profile.nicknames.length).toBeGreaterThan(0);
+      const result = scoreAnswers(synthesizeAnswers(`${type}-AC`));
+      const report = buildReport(result!, "林夏");
+      expect(report.subtitle).toContain(profile.cnName);
+      expect(report.text).toContain(profile.cnName);
+      for (const nick of profile.nicknames) {
+        expect(report.text).toContain(nick);
+      }
+    }
   });
 });

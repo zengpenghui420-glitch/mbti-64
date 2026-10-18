@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DIMENSIONS } from "@/data/dimensions";
 import { getProfile } from "@/data/profiles";
 import { IDENTITY, STANCE } from "@/data/suffixes";
+import { temperamentOf } from "@/data/temperament";
 import { downloadReport, subtypeLabel } from "@/lib/report";
 import type { QuizResult } from "@/lib/score";
 
@@ -27,8 +28,9 @@ export function ResultView({
   const profile = getProfile(result.type);
   const identity = IDENTITY[result.identity];
   const stance = STANCE[result.stance];
+  const temp = temperamentOf(result.type);
   const [copied, setCopied] = useState(false);
-  const summary = `我的结果是 ${result.code}「${subtypeLabel(result)}」。108 题答完即出，无二次收费。`;
+  const summary = `我的结果是 ${result.code}「${profile.cnName} · ${profile.nicknames.join(" / ")} · ${identity.name}${stance.name}」。108 题答完即出，无二次收费。`;
 
   async function copySummary() {
     try {
@@ -54,24 +56,39 @@ export function ResultView({
         </p>
       ) : null}
 
-      <section className="overflow-hidden rounded-[32px] bg-white/90 shadow-sm ring-1 ring-foreground/10">
-        <div className="grid gap-2 px-5 pt-6 md:grid-cols-[180px_1fr] md:items-center md:px-8">
-          <PersonaAvatar code={result.code} className="mx-auto w-40" label={subtypeLabel(result)} />
-          <div className="pb-6 text-center md:text-left">
-            <p className="text-sm font-medium text-primary">你的 64 型结果</p>
-            <p className="font-display mt-1 text-5xl tracking-wide md:text-6xl">{result.code}</p>
-            <h1 className="mt-2 text-2xl font-semibold">{subtypeLabel(result)}</h1>
-            <p className="mt-2 text-muted-foreground">{profile.epithet}</p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
-              <span className="rounded-full bg-muted px-3 py-1 text-sm">主类型 {result.type}</span>
-              <span className="rounded-full bg-muted px-3 py-1 text-sm">
-                {identity.letter} {identity.name}
-              </span>
-              <span className="rounded-full bg-muted px-3 py-1 text-sm">
-                {stance.letter} {stance.name}
-              </span>
-            </div>
+      <section
+        className="overflow-hidden rounded-[32px] px-4 pb-6 pt-2 shadow-sm ring-1 ring-foreground/10"
+        style={{ background: `linear-gradient(180deg, ${temp.wash} 0%, #ffffff 78%)` }}
+      >
+        <PersonaAvatar
+          code={result.code}
+          className="mx-auto w-[min(100%,250px)]"
+          label={`${profile.cnName}，${profile.nicknames.join("、")}`}
+        />
+        <div className="-mt-2 text-center">
+          <p className="text-sm font-semibold" style={{ color: temp.ink }}>
+            {temp.name} · 十六型画像
+          </p>
+          <p className="font-display mt-1 text-5xl tracking-wide">{result.code}</p>
+          <h1 className="mt-1 text-3xl font-semibold">{profile.cnName}</h1>
+          <p className="mt-1 text-base font-medium" style={{ color: temp.ink }}>
+            {profile.nicknames.join(" · ")}
+          </p>
+          <p className="mt-2 text-muted-foreground">{profile.epithet}</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <span className="rounded-full px-3 py-1 text-sm" style={{ background: temp.chip, color: temp.ink }}>
+              主类型 {result.type}
+            </span>
+            <span className="rounded-full px-3 py-1 text-sm" style={{ background: temp.chip, color: temp.ink }}>
+              {identity.letter} {identity.name}
+            </span>
+            <span className="rounded-full px-3 py-1 text-sm" style={{ background: temp.chip, color: temp.ink }}>
+              {stance.letter} {stance.name}
+            </span>
           </div>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            64 型沿用这张「{profile.cnName}」画像。{subtypeLabel(result)}
+          </p>
         </div>
       </section>
 
