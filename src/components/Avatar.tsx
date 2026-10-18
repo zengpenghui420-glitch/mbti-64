@@ -50,6 +50,28 @@ function Hand({ x, y, skin, s = 1 }: { x: number; y: number; skin: string; s?: n
   return <polygon points={diamond(x, y, 10 * s, 12 * s)} fill={skin} />;
 }
 
+/** Right-side offsets, mirrored through cx so the skull cannot lean. */
+export function faceOutline(cx: number, cy: number): Array<[number, number]> {
+  const down: Array<[number, number]> = [
+    [32, -40],
+    [44, -4],
+    [34, 26],
+    [14, 42],
+  ];
+  return [
+    [cx, cy - 48],
+    ...down.map(([dx, dy]): [number, number] => [cx + dx, cy + dy]),
+    [cx, cy + 48],
+    ...[...down].reverse().map(([dx, dy]): [number, number] => [cx - dx, cy + dy]),
+  ];
+}
+
+function outlinePoints(cx: number, cy: number): string {
+  return faceOutline(cx, cy)
+    .map(([x, y]) => `${x},${y}`)
+    .join(" ");
+}
+
 function Head({
   cx = 140,
   cy = 104,
@@ -67,69 +89,148 @@ function Head({
 }) {
   const lx = cx - 16;
   const right = cx + 16;
-  const ly = cy + 2;
+  const ly = cy;
   return (
     <g>
-      <polygon points={`${cx - 16},${cy + 24} ${cx + 16},${cy + 24} ${cx + 22},${cy + 74} ${cx - 22},${cy + 74}`} fill={skin} />
-      <polygon points={`${cx - 50},${cy - 6} ${cx - 74},${cy + 10} ${cx - 46},${cy + 24}`} fill={skin} />
-      <polygon points={`${cx + 50},${cy - 6} ${cx + 74},${cy + 10} ${cx + 46},${cy + 24}`} fill={skin} />
-      <polygon points={`${cx - 36},${cy - 16} ${cx},${cy - 64} ${cx + 36},${cy - 16}`} fill={skin} />
-      <polygon points={`${cx - 56},${cy - 16} ${cx + 56},${cy - 16} ${cx + 60},${cy + 18} ${cx - 60},${cy + 18}`} fill={skin} />
-      <polygon points={`${cx - 60},${cy + 18} ${cx + 60},${cy + 18} ${cx},${cy + 64}`} fill={skin} />
+      <polygon points={`${cx - 12},${cy + 32} ${cx + 12},${cy + 32} ${cx + 16},${cy + 68} ${cx - 16},${cy + 68}`} fill={skin} />
+      <polygon points={`${cx - 40},${cy - 8} ${cx - 54},${cy + 2} ${cx - 38},${cy + 16}`} fill={skin} />
+      <polygon points={`${cx + 40},${cy - 8} ${cx + 54},${cy + 2} ${cx + 38},${cy + 16}`} fill={skin} />
+      <polygon points={outlinePoints(cx, cy)} fill={skin} />
       {mood === "focus" ? (
         <g fill="none" stroke={INK} strokeWidth="2.6">
-          <path d={`M${lx - 12} ${ly - 16} L${lx + 8} ${ly - 10}`} />
-          <path d={`M${right - 6} ${ly - 10} L${right + 14} ${ly - 16}`} />
+          <path d={`M${cx - 26} ${ly - 18} L${cx - 8} ${ly - 12}`} />
+          <path d={`M${cx + 26} ${ly - 18} L${cx + 8} ${ly - 12}`} />
         </g>
       ) : (
         <g fill="none" stroke={INK} strokeWidth="2.4">
-          <path d={`M${lx - 12} ${ly - 16} L${lx + 8} ${ly - 14}`} />
-          <path d={`M${right - 8} ${ly - 14} L${right + 12} ${ly - 16}`} />
+          <path d={`M${cx - 26} ${ly - 16} L${cx - 8} ${ly - 16}`} />
+          <path d={`M${cx + 8} ${ly - 16} L${cx + 26} ${ly - 16}`} />
         </g>
       )}
       {mood === "soft" ? (
         <g fill="none" stroke={INK} strokeWidth="2.6">
-          <path d={`M${lx - 8} ${ly - 2} L${lx} ${ly + 6} L${lx + 8} ${ly - 2}`} />
-          <path d={`M${right - 8} ${ly - 2} L${right} ${ly + 6} L${right + 8} ${ly - 2}`} />
+          <path d={`M${cx - 24} ${ly} L${cx - 16} ${ly + 6} L${cx - 8} ${ly}`} />
+          <path d={`M${cx + 8} ${ly} L${cx + 16} ${ly + 6} L${cx + 24} ${ly}`} />
         </g>
       ) : glasses === "sun" ? null : (
         <g>
           <polygon points={diamond(lx, ly, 4.5, 6)} fill={INK} />
           <polygon points={diamond(right, ly, 4.5, 6)} fill={INK} />
-          <polygon points={`${lx},${ly - 4} ${lx + 3},${ly - 1} ${lx + 1},${ly + 1}`} fill="#fff" />
-          <polygon points={`${right},${ly - 4} ${right + 3},${ly - 1} ${right + 1},${ly + 1}`} fill="#fff" />
+          <polygon points={`${lx - 1},${ly - 4} ${lx - 4},${ly - 1} ${lx},${ly - 1}`} fill="#fff" />
+          <polygon points={`${right + 1},${ly - 4} ${right + 4},${ly - 1} ${right},${ly - 1}`} fill="#fff" />
         </g>
       )}
-      <polygon points={`${cx - 36},${ly + 10} ${cx - 22},${ly + 6} ${cx - 28},${ly + 18}`} fill={blush} />
-      <polygon points={`${cx + 22},${ly + 6} ${cx + 36},${ly + 10} ${cx + 28},${ly + 18}`} fill={blush} />
+      <polygon points={`${cx - 34},${ly + 10} ${cx - 20},${ly + 6} ${cx - 26},${ly + 16}`} fill={blush} />
+      <polygon points={`${cx + 20},${ly + 6} ${cx + 34},${ly + 10} ${cx + 26},${ly + 16}`} fill={blush} />
       {mood === "grin" ? (
-        <polygon points={`${cx - 16},${ly + 16} ${cx},${ly + 30} ${cx + 16},${ly + 16} ${cx + 8},${ly + 20} ${cx},${ly + 22} ${cx - 8},${ly + 20}`} fill="#E9897C" stroke={INK} strokeWidth="1.8" />
+        <polygon points={`${cx - 14},${ly + 16} ${cx},${ly + 28} ${cx + 14},${ly + 16} ${cx + 7},${ly + 20} ${cx},${ly + 22} ${cx - 7},${ly + 20}`} fill="#E9897C" stroke={INK} strokeWidth="1.8" />
       ) : mood === "focus" ? (
-        <path d={`M${cx - 10} ${ly + 20} H${cx + 10}`} stroke={INK} strokeWidth="2.4" fill="none" />
+        <path d={`M${cx - 10} ${ly + 18} H${cx + 10}`} stroke={INK} strokeWidth="2.4" fill="none" />
       ) : (
-        <path d={`M${cx - 12} ${ly + 18} L${cx} ${ly + 26} L${cx + 12} ${ly + 18}`} stroke={INK} strokeWidth="2.4" fill="none" />
+        <path d={`M${cx - 10} ${ly + 16} L${cx} ${ly + 24} L${cx + 10} ${ly + 16}`} stroke={INK} strokeWidth="2.4" fill="none" />
       )}
       {glasses === "rect" ? (
         <g fill="#fff" fillOpacity="0.16" stroke={INK} strokeWidth="2.4">
-          <polygon points={`${lx - 16},${ly - 14} ${lx + 14},${ly - 14} ${lx + 14},${ly + 10} ${lx - 16},${ly + 10}`} />
-          <polygon points={`${right - 14},${ly - 14} ${right + 16},${ly - 14} ${right + 16},${ly + 10} ${right - 14},${ly + 10}`} />
-          <path d={`M${lx + 14} ${ly - 2} H${right - 14}`} fill="none" />
+          <polygon points={`${lx - 15},${ly - 12} ${lx + 15},${ly - 12} ${lx + 15},${ly + 10} ${lx - 15},${ly + 10}`} />
+          <polygon points={`${right - 15},${ly - 12} ${right + 15},${ly - 12} ${right + 15},${ly + 10} ${right - 15},${ly + 10}`} />
+          <path d={`M${lx + 15} ${ly - 1} H${right - 15}`} fill="none" />
         </g>
       ) : null}
       {glasses === "gem" ? (
         <g fill="#fff" fillOpacity="0.14" stroke={INK} strokeWidth="2.4">
-          <polygon points={diamond(lx, ly, 16, 13)} />
-          <polygon points={diamond(right, ly, 16, 13)} />
+          <polygon points={diamond(lx, ly, 15, 12)} />
+          <polygon points={diamond(right, ly, 15, 12)} />
           <path d={`M${lx + 14} ${ly} H${right - 14}`} fill="none" />
         </g>
       ) : null}
       {glasses === "sun" ? (
         <g>
-          <polygon points={`${lx - 18},${ly - 10} ${lx + 16},${ly - 12} ${lx + 14},${ly + 8} ${lx - 20},${ly + 10}`} fill="#243044" />
-          <polygon points={`${right - 14},${ly - 12} ${right + 20},${ly - 10} ${right + 18},${ly + 10} ${right - 16},${ly + 8}`} fill="#243044" />
-          <path d={`M${lx + 16} ${ly - 1} H${right - 14}`} stroke="#243044" strokeWidth="4" />
+          <polygon points={`${lx - 16},${ly - 10} ${lx + 14},${ly - 10} ${lx + 14},${ly + 8} ${lx - 16},${ly + 8}`} fill="#243044" />
+          <polygon points={`${right - 14},${ly - 10} ${right + 16},${ly - 10} ${right + 16},${ly + 8} ${right - 14},${ly + 8}`} fill="#243044" />
+          <path d={`M${lx + 14} ${ly - 1} H${right - 14}`} stroke="#243044" strokeWidth="4" />
         </g>
       ) : null}
+    </g>
+  );
+}
+
+function HairCap({ cx, cy, color, top = -58 }: { cx: number; cy: number; color: string; top?: number }) {
+  return (
+    <polygon
+      points={`${cx - 42},${cy - 4} ${cx - 30},${cy - 44} ${cx},${cy + top} ${cx + 30},${cy - 44} ${cx + 42},${cy - 4} ${cx + 24},${cy - 14} ${cx},${cy - 22} ${cx - 24},${cy - 14}`}
+      fill={color}
+    />
+  );
+}
+
+function Hair({
+  cx = 140,
+  cy,
+  color,
+  kind,
+}: {
+  cx?: number;
+  cy: number;
+  color: string;
+  kind: "silver" | "messy" | "slick" | "wavy" | "elder" | "flower" | "short" | "curls" | "bun" | "bob" | "spikes" | "beret" | "tail";
+}) {
+  return (
+    <g>
+      <HairCap cx={cx} cy={cy} color={color} top={kind === "slick" || kind === "short" ? -52 : -60} />
+      {kind === "messy" || kind === "wavy" || kind === "curls" || kind === "spikes" ? (
+        <g fill={color}>
+          <polygon points={`${cx},${cy - 68} ${cx - 14},${cy - 36} ${cx + 14},${cy - 36}`} />
+          <polygon points={`${cx - 24},${cy - 62} ${cx - 42},${cy - 30} ${cx - 16},${cy - 34}`} />
+          <polygon points={`${cx + 16},${cy - 34} ${cx + 42},${cy - 30} ${cx + 24},${cy - 62}`} />
+          <polygon points={`${cx - 38},${cy - 42} ${cx - 54},${cy - 10} ${cx - 28},${cy - 18}`} />
+          <polygon points={`${cx + 28},${cy - 18} ${cx + 54},${cy - 10} ${cx + 38},${cy - 42}`} />
+        </g>
+      ) : null}
+      {kind === "bob" ? (
+        <g fill={color}>
+          <polygon points={`${cx - 46},${cy - 8} ${cx - 24},${cy - 22} ${cx - 30},${cy + 46} ${cx - 50},${cy + 38}`} />
+          <polygon points={`${cx + 24},${cy - 22} ${cx + 46},${cy - 8} ${cx + 50},${cy + 38} ${cx + 30},${cy + 46}`} />
+        </g>
+      ) : null}
+      {kind === "bun" ? <polygon points={diamond(cx, cy - 62, 16, 14)} fill={color} /> : null}
+      {kind === "beret" ? (
+        <g>
+          <polygon points={`${cx - 30},${cy - 34} ${cx + 30},${cy - 34} ${cx + 22},${cy - 52} ${cx - 22},${cy - 52}`} fill={color} />
+          <polygon points={diamond(cx, cy - 42, 6, 6)} fill="#E07A8C" />
+        </g>
+      ) : null}
+      {kind === "tail" ? (
+        <g fill={color}>
+          <polygon points={`${cx + 30},${cy - 8} ${cx + 48},${cy + 6} ${cx + 58},${cy + 74} ${cx + 38},${cy + 64}`} />
+          <polygon points={diamond(cx + 42, cy + 4, 6, 6)} fill="#FFE08A" />
+        </g>
+      ) : null}
+      {kind === "elder" ? (
+        <g fill={color}>
+          <polygon points={`${cx - 26},${cy + 18} ${cx},${cy + 10} ${cx + 26},${cy + 18} ${cx + 16},${cy + 86} ${cx - 16},${cy + 86}`} />
+          <polygon points={`${cx - 36},${cy + 14} ${cx - 18},${cy + 22} ${cx - 24},${cy + 118}`} />
+          <polygon points={`${cx + 18},${cy + 22} ${cx + 36},${cy + 14} ${cx + 24},${cy + 118}`} />
+        </g>
+      ) : null}
+      {kind === "flower" ? (
+        <g>
+          <Bloom x={cx - 30} y={cy - 48} petal="#F2A3B5" core="#F6D56A" s={0.7} />
+          <Bloom x={cx} y={cy - 58} petal="#F6D56A" core="#F2A3B5" s={0.85} />
+          <Bloom x={cx + 30} y={cy - 48} petal="#F2A3B5" core="#F6D56A" s={0.7} />
+        </g>
+      ) : null}
+    </g>
+  );
+}
+
+function Goggles({ cx = 140, cy }: { cx?: number; cy: number }) {
+  const lx = cx - 16;
+  const right = cx + 16;
+  return (
+    <g>
+      <path d={`M${lx - 14} ${cy} H${right + 14}`} stroke="#241C18" strokeWidth="3" />
+      <polygon points={`${lx - 14},${cy - 11} ${lx + 14},${cy - 11} ${lx + 14},${cy + 11} ${lx - 14},${cy + 11}`} fill="#D7F1F8" stroke={INK} strokeWidth="2.2" />
+      <polygon points={`${right - 14},${cy - 11} ${right + 14},${cy - 11} ${right + 14},${cy + 11} ${right - 14},${cy + 11}`} fill="#D7F1F8" stroke={INK} strokeWidth="2.2" />
     </g>
   );
 }
@@ -209,13 +310,7 @@ function PortraitINTJ() {
       <polygon points="146,222 174,220 166,238 150,236" fill={skin} />
       <Hand x={78} y={230} skin={skin} />
       <Head cy={98} skin={skin} blush="#F0B4BA" mood="focus" glasses="rect" />
-      <g fill="#E7E2F4">
-        <polygon points="102,78 128,40 154,46 140,86" />
-        <polygon points="128,40 176,34 168,78 154,46" />
-        <polygon points="176,34 198,72 170,96 168,78" />
-        <polygon points="102,78 78,58 96,46" />
-        <polygon points="96,46 128,40 110,62" />
-      </g>
+      <Hair cy={98} color="#E7E2F4" kind="silver" />
     </g>
   );
 }
@@ -245,14 +340,7 @@ function PortraitINTP() {
       </g>
       <Hand x={198} y={186} skin={skin} />
       <Head cy={102} skin={skin} blush="#E8A898" mood="calm" glasses="gem" />
-      <g fill="#3E342C">
-        <polygon points="108,70 132,36 150,48" />
-        <polygon points="126,44 158,28 168,58" />
-        <polygon points="156,36 190,48 176,78" />
-        <polygon points="96,96 118,52 140,78" />
-        <polygon points="184,96 162,54 146,80" />
-        <polygon points="100,110 140,70 180,110 164,92 140,100 116,92" />
-      </g>
+      <Hair cy={102} color="#3E342C" kind="messy" />
     </g>
   );
 }
@@ -270,11 +358,7 @@ function PortraitENTJ() {
       <Hand x={214} y={104} skin={skin} s={0.85} />
       <polygon points="214,86 236,100 214,108" fill={skin} />
       <Head cy={98} skin={skin} blush="#F0B0B0" mood="focus" />
-      <g fill="#2C2438">
-        <polygon points="98,90 140,40 182,90 166,72 140,64 114,72" />
-        <polygon points="166,70 210,78 196,112 172,96" />
-        <polygon points="102,78 86,96 112,100" />
-      </g>
+      <Hair cy={98} color="#2C2438" kind="slick" />
     </g>
   );
 }
@@ -296,14 +380,7 @@ function PortraitENTP() {
       <Hand x={208} y={110} skin={skin} />
       <polygon points="188,78 196,98 214,98 200,110 206,128 188,116 170,128 176,110 162,98 180,98" fill="#FFF6D4" stroke={INK} strokeWidth="1.5" />
       <Head cy={108} skin={skin} blush="#E89888" mood="grin" />
-      <g fill="#4A3428">
-        <polygon points="104,78 132,42 156,52" />
-        <polygon points="132,46 168,38 160,70" />
-        <polygon points="160,46 196,62 176,88" />
-        <polygon points="96,108 124,64 140,90" />
-        <polygon points="184,108 160,66 148,92" />
-        <polygon points="98,112 140,78 182,112 140,96" />
-      </g>
+      <Hair cy={108} color="#4A3428" kind="wavy" />
     </g>
   );
 }
@@ -322,15 +399,7 @@ function PortraitINFJ() {
       <Limb x1={168} y1={196} x2={204} y2={160} color="#3E8A5C" width={18} />
       <Hand x={204} y={150} skin={skin} />
       <Head cy={108} skin={skin} blush="#F0B4B4" mood="soft" />
-      <g fill="#F7F4EE">
-        <polygon points="96,100 140,46 184,100 168,78 140,68 112,78" />
-        <polygon points="104,108 124,96 118,168" />
-        <polygon points="176,108 156,96 162,168" />
-        <polygon points="112,140 140,168 168,140 156,210 124,210" />
-        <polygon points="118,188 132,180 126,300" />
-        <polygon points="148,180 162,188 154,308" />
-        <polygon points="128,200 152,200 140,250" />
-      </g>
+      <Hair cy={108} color="#F7F4EE" kind="elder" />
     </g>
   );
 }
@@ -350,14 +419,7 @@ function PortraitINFP() {
       <Bloom x={210} y={156} petal="#F2A3B5" core="#F6D56A" />
       <Hand x={198} y={198} skin={skin} />
       <Head cy={104} skin={skin} blush="#E8A090" mood="soft" />
-      <g fill="#3A2A28">
-        <polygon points="100,96 140,48 180,96 164,78 140,70 116,78" />
-        <polygon points="104,100 92,118 122,108" />
-        <polygon points="176,100 188,118 158,108" />
-      </g>
-      <Bloom x={112} y={62} petal="#F2A3B5" core="#F6D56A" s={0.7} />
-      <Bloom x={142} y={50} petal="#F6D56A" core="#F2A3B5" s={0.85} />
-      <Bloom x={172} y={64} petal="#F2A3B5" core="#7DB88A" s={0.7} />
+      <Hair cy={104} color="#3A2A28" kind="flower" />
     </g>
   );
 }
@@ -382,7 +444,7 @@ function PortraitENFJ() {
       </g>
       <Hand x={206} y={142} skin={skin} />
       <Head cy={100} skin={skin} blush="#F0A8B4" mood="grin" />
-      <polygon points="100,92 140,46 180,92 164,74 140,66 116,74" fill="#3A2E32" />
+      <Hair cy={100} color="#3A2E32" kind="short" />
     </g>
   );
 }
@@ -409,15 +471,7 @@ function PortraitENFP() {
       <Limb x1={166} y1={146} x2={210} y2={124} color="#62B56C" />
       <Hand x={214} y={118} skin={skin} />
       <Head cy={90} skin={skin} blush="#EEA088" mood="grin" />
-      <g fill="#5A341F">
-        <polygon points="104,78 118,42 136,62" />
-        <polygon points="122,58 146,28 158,58" />
-        <polygon points="150,40 178,26 176,64" />
-        <polygon points="168,48 198,58 180,84" />
-        <polygon points="96,96 112,62 128,90" />
-        <polygon points="184,92 170,58 156,86" />
-        <polygon points="100,100 140,62 180,100 140,86" />
-      </g>
+      <Hair cy={90} color="#5A341F" kind="curls" />
     </g>
   );
 }
@@ -440,10 +494,7 @@ function PortraitISTJ() {
       <Hand x={86} y={250} skin={skin} />
       <Hand x={176} y={246} skin={skin} />
       <Head cy={100} skin={skin} blush="#F0B4AE" mood="calm" />
-      <g fill="#2A3344">
-        <polygon points="100,92 140,44 180,92 164,74 140,66 116,74" />
-        <polygon points="108,84 150,62 168,96 140,88" />
-      </g>
+      <Hair cy={100} color="#2A3344" kind="short" />
     </g>
   );
 }
@@ -469,10 +520,7 @@ function PortraitISFJ() {
       <Bloom x={218} y={158} petal="#F2A3B5" core="#F6D56A" s={0.85} />
       <Hand x={210} y={196} skin={skin} />
       <Head cy={102} skin={skin} blush="#E89898" mood="soft" />
-      <g fill="#4A3034">
-        <polygon points="124,62 140,36 156,62 140,54" />
-        <polygon points="98,100 140,50 182,100 164,80 140,72 116,80" />
-      </g>
+      <Hair cy={102} color="#4A3034" kind="bun" />
     </g>
   );
 }
@@ -499,7 +547,7 @@ function PortraitESTJ() {
         <path d="M60 12 L74 8 M60 22 L78 22 M60 32 L74 38" stroke={INK} strokeWidth="2" />
       </g>
       <Head cy={98} skin={skin} blush="#D98B78" mood="focus" />
-      <polygon points="102,90 140,48 178,90 162,74 140,66 118,74" fill="#2A241F" />
+      <Hair cy={98} color="#2A241F" kind="short" />
     </g>
   );
 }
@@ -525,11 +573,7 @@ function PortraitESFJ() {
       <Hand x={96} y={214} skin={skin} />
       <Hand x={188} y={214} skin={skin} />
       <Head cy={100} skin={skin} blush="#F0A8A0" mood="grin" />
-      <g fill="#5A382C">
-        <polygon points="96,96 140,42 184,96 166,76 140,68 114,76" />
-        <polygon points="92,100 112,88 108,168 90,160" />
-        <polygon points="188,100 168,88 172,168 190,160" />
-      </g>
+      <Hair cy={100} color="#5A382C" kind="bob" />
     </g>
   );
 }
@@ -555,16 +599,8 @@ function PortraitISTP() {
       <Hand x={92} y={200} skin={skin} />
       <Hand x={186} y={182} skin={skin} />
       <Head cy={100} skin={skin} blush="#C47D68" mood="calm" />
-      <g fill="#241C18">
-        <polygon points="102,92 140,50 178,92 162,76 140,68 118,76" />
-        <polygon points="116,58 132,36 140,70" />
-      </g>
-      <g>
-        <path d="M108 78 H172" stroke="#241C18" strokeWidth="4" />
-        <polygon points="108,68 140,64 144,94 106,98" fill="#D7F1F8" stroke={INK} strokeWidth="2.2" />
-        <polygon points="146,64 180,68 182,98 144,94" fill="#D7F1F8" stroke={INK} strokeWidth="2.2" />
-        <path d="M136 80 H144" stroke={INK} strokeWidth="2.2" />
-      </g>
+      <Hair cy={100} color="#241C18" kind="short" />
+      <Goggles cy={100} />
     </g>
   );
 }
@@ -592,13 +628,7 @@ function PortraitISFP() {
       <polygon points="206,140 228,148 214,162" fill="#E07A8C" />
       <Hand x={204} y={196} skin={skin} />
       <Head cy={102} skin={skin} blush="#F3B4B4" mood="soft" />
-      <g fill="#3D2C32">
-        <polygon points="98,96 140,50 182,96 164,78 140,70 116,78" />
-        <polygon points="100,92 120,74 118,108" />
-        <polygon points="180,92 160,74 162,108" />
-        <polygon points="118,62 168,52 176,78 150,70 122,78" />
-      </g>
-      <polygon points={diamond(176, 60, 6, 6)} fill="#E07A8C" />
+      <Hair cy={102} color="#3D2C32" kind="beret" />
     </g>
   );
 }
@@ -623,12 +653,7 @@ function PortraitESTP() {
       </g>
       <Hand x={186} y={196} skin={skin} />
       <Head cy={98} skin={skin} blush="#E89080" mood="grin" glasses="sun" />
-      <g fill="#2C211C">
-        <polygon points="100,88 140,46 180,88 164,72 140,64 116,72" />
-        <polygon points="140,42 158,78 122,78" />
-        <polygon points="108,60 128,86 96,96" />
-        <polygon points="176,58 188,94 154,82" />
-      </g>
+      <Hair cy={98} color="#2C211C" kind="spikes" />
     </g>
   );
 }
@@ -661,11 +686,7 @@ function PortraitESFP() {
       <Hand x={74} y={108} skin={skin} />
       <Hand x={210} y={112} skin={skin} />
       <Head cy={100} skin={skin} blush="#F0A0B0" mood="grin" />
-      <g fill="#4E2C28">
-        <polygon points="100,96 140,44 180,96 164,76 140,68 116,76" />
-        <polygon points="176,108 196,96 204,168 182,160" />
-        <polygon points={diamond(188, 100, 8, 8)} fill="#FFE08A" />
-      </g>
+      <Hair cy={100} color="#4E2C28" kind="tail" />
     </g>
   );
 }

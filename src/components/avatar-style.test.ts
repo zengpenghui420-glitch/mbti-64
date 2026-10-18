@@ -1,5 +1,6 @@
 import src from "./Avatar.tsx?raw";
 import { describe, expect, it } from "vitest";
+import { faceOutline } from "./Avatar";
 
 describe("polygonal portraits", () => {
   it("builds every portrait from straight edges", () => {
@@ -16,5 +17,15 @@ describe("polygonal portraits", () => {
       const commands = d.match(/[A-Za-z]/g) ?? [];
       expect(commands.every((command: string) => "MLHVZmlhvz".includes(command))).toBe(true);
     }
+  });
+
+  it("keeps the head outline mirrored", () => {
+    const points = faceOutline(140, 100);
+    for (const [x, y] of points) {
+      const mirrored = points.some(([otherX, otherY]) => Math.abs(otherX - (280 - x)) < 0.01 && Math.abs(otherY - y) < 0.01);
+      expect(mirrored).toBe(true);
+    }
+    expect(points[0]?.[0]).toBe(140);
+    expect(points[5]?.[0]).toBe(140);
   });
 });
