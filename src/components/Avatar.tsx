@@ -1,871 +1,670 @@
+import type { ReactElement } from "react";
 import type { TypeCode } from "@/lib/score";
 import { cn } from "cn";
 
 /**
- * Original flat geometric portraits.
- * Same sticker vibe as the classic sixteen-type cartoons — round head,
- * short body, one readable prop, temperament pastel — drawn from scratch.
+ * Original flat portraits. Poses and props follow the classic sixteen-type
+ * roles (desk, flask, podium, staff, jump, drill, and so on) but every path
+ * is drawn for this quiz — not traced from another site.
  */
 
-type HairStyle =
-  | "side"
-  | "messy"
-  | "sleek"
-  | "wavy"
-  | "long"
-  | "bangs"
-  | "soft"
-  | "curly"
-  | "neat"
-  | "bun"
-  | "crop"
-  | "bob"
-  | "tuft"
-  | "fluff"
-  | "spiky"
-  | "pony";
+const INK = "#2C2834";
 
-type FaceStyle = "calm" | "soft" | "grin" | "focus";
-type Outfit = "suit" | "sweater" | "robe" | "apron" | "jacket";
-type PropKind =
-  | "blueprint"
-  | "cube"
-  | "baton"
-  | "spark"
-  | "lantern"
-  | "book"
-  | "sword"
-  | "stars"
-  | "clipboard"
-  | "teacup"
-  | "ruler"
-  | "cake"
-  | "drill"
-  | "palette"
-  | "bolt"
-  | "mic";
-
-interface Look {
-  bg: string;
-  skin: string;
-  hair: string;
-  cloth: string;
-  pants: string;
-  accent: string;
-  shoe: string;
-  blush: string;
-  ink: string;
-  hairStyle: HairStyle;
-  face: FaceStyle;
-  glasses?: "rect" | "round" | "sun";
-  hat?: "beret" | "nurse" | "goggles";
-  outfit: Outfit;
-  tie?: string;
-  left: [number, number];
-  right: [number, number];
-  prop: PropKind;
-  propAt: [number, number];
-  propRot?: number;
+function Backdrop({ color }: { color: string }) {
+  return (
+    <>
+      <circle cx="140" cy="172" r="128" fill={color} />
+      <ellipse cx="140" cy="318" rx="64" ry="9" fill={INK} opacity="0.08" />
+    </>
+  );
 }
 
-const LOOKS: Record<TypeCode, Look> = {
-  INTJ: {
-    bg: "#EDE4F8",
-    skin: "#F4C9A8",
-    hair: "#3A2C55",
-    cloth: "#6B52B0",
-    pants: "#46367A",
-    accent: "#F7F4FC",
-    shoe: "#2E2644",
-    blush: "#F0B4BA",
-    ink: "#2A2436",
-    hairStyle: "side",
-    face: "focus",
-    glasses: "rect",
-    outfit: "suit",
-    tie: "#CDBEF0",
-    left: [78, 236],
-    right: [208, 228],
-    prop: "blueprint",
-    propAt: [186, 168],
-    propRot: -8,
-  },
-  INTP: {
-    bg: "#E7E0F6",
-    skin: "#E7B48E",
-    hair: "#3E342C",
-    cloth: "#7D6CC0",
-    pants: "#4A4068",
-    accent: "#F4EFE6",
-    shoe: "#3A342C",
-    blush: "#E8A898",
-    ink: "#2C2830",
-    hairStyle: "messy",
-    face: "calm",
-    glasses: "round",
-    outfit: "sweater",
-    left: [86, 210],
-    right: [214, 226],
-    prop: "cube",
-    propAt: [188, 176],
-  },
-  ENTJ: {
-    bg: "#F0E4F8",
-    skin: "#F6D0B4",
-    hair: "#2C2438",
-    cloth: "#5C478F",
-    pants: "#3A305C",
-    accent: "#F8F4FC",
-    shoe: "#2A2438",
-    blush: "#F0B0B0",
-    ink: "#241E30",
-    hairStyle: "sleek",
-    face: "focus",
-    outfit: "suit",
-    tie: "#E7C56A",
-    left: [92, 228],
-    right: [218, 168],
-    prop: "baton",
-    propAt: [206, 112],
-    propRot: -16,
-  },
-  ENTP: {
-    bg: "#EFE6FA",
-    skin: "#D9A57C",
-    hair: "#4A3428",
-    cloth: "#8B6AD2",
-    pants: "#4E4268",
-    accent: "#FFF6D4",
-    shoe: "#3E342C",
-    blush: "#E89888",
-    ink: "#2C2430",
-    hairStyle: "wavy",
-    face: "grin",
-    outfit: "jacket",
-    left: [76, 232],
-    right: [214, 164],
-    prop: "spark",
-    propAt: [196, 112],
-    propRot: 8,
-  },
-  INFJ: {
-    bg: "#E5F6EA",
-    skin: "#F3C7A8",
-    hair: "#2C4638",
-    cloth: "#5E9A72",
-    pants: "#3E6B50",
-    accent: "#F6E7A8",
-    shoe: "#314838",
-    blush: "#F0B4B4",
-    ink: "#243028",
-    hairStyle: "long",
-    face: "soft",
-    outfit: "robe",
-    tie: "#F3D98A",
-    left: [74, 240],
-    right: [206, 230],
-    prop: "lantern",
-    propAt: [186, 176],
-  },
-  INFP: {
-    bg: "#E7F7EC",
-    skin: "#C98662",
-    hair: "#3A2A28",
-    cloth: "#7DB88A",
-    pants: "#4E6E58",
-    accent: "#F7F3EA",
-    shoe: "#3A302C",
-    blush: "#E8A090",
-    ink: "#2C2826",
-    hairStyle: "bangs",
-    face: "soft",
-    outfit: "sweater",
-    left: [78, 236],
-    right: [208, 226],
-    prop: "book",
-    propAt: [180, 186],
-    propRot: -6,
-  },
-  ENFJ: {
-    bg: "#E3F6E8",
-    skin: "#F6D0B0",
-    hair: "#3A2E32",
-    cloth: "#3F8F62",
-    pants: "#2F5E44",
-    accent: "#F8E7C4",
-    shoe: "#2C3830",
-    blush: "#F0A8B4",
-    ink: "#243028",
-    hairStyle: "soft",
-    face: "grin",
-    outfit: "jacket",
-    left: [74, 220],
-    right: [214, 214],
-    prop: "sword",
-    propAt: [204, 146],
-    propRot: 10,
-  },
-  ENFP: {
-    bg: "#E8F8EC",
-    skin: "#E8B48A",
-    hair: "#5A341F",
-    cloth: "#62B56C",
-    pants: "#3E7A4C",
-    accent: "#FFE08A",
-    shoe: "#4A3428",
-    blush: "#EEA088",
-    ink: "#3A2A22",
-    hairStyle: "curly",
-    face: "grin",
-    outfit: "sweater",
-    left: [72, 214],
-    right: [206, 128],
-    prop: "stars",
-    propAt: [48, 168],
-  },
-  ISTJ: {
-    bg: "#E6F2FC",
-    skin: "#F4D2B4",
-    hair: "#2A3344",
-    cloth: "#4F82C4",
-    pants: "#2E4E74",
-    accent: "#F7F5F2",
-    shoe: "#2A3340",
-    blush: "#F0B4AE",
-    ink: "#243044",
-    hairStyle: "neat",
-    face: "calm",
-    outfit: "suit",
-    tie: "#D5E4F4",
-    left: [78, 236],
-    right: [206, 224],
-    prop: "clipboard",
-    propAt: [184, 168],
-  },
-  ISFJ: {
-    bg: "#E8F4FC",
-    skin: "#E0A67E",
-    hair: "#4A3034",
-    cloth: "#7EADD8",
-    pants: "#3E6488",
-    accent: "#FFF8F4",
-    shoe: "#3A4048",
-    blush: "#E89898",
-    ink: "#2C3844",
-    hairStyle: "bun",
-    face: "soft",
-    hat: "nurse",
-    outfit: "apron",
-    left: [78, 234],
-    right: [208, 226],
-    prop: "teacup",
-    propAt: [186, 190],
-  },
-  ESTJ: {
-    bg: "#E5F1FC",
-    skin: "#C6865A",
-    hair: "#2A241F",
-    cloth: "#3D74B0",
-    pants: "#2A4C72",
-    accent: "#F4F7FB",
-    shoe: "#2A3038",
-    blush: "#D98B78",
-    ink: "#243044",
-    hairStyle: "crop",
-    face: "focus",
-    outfit: "suit",
-    tie: "#F0D48A",
-    left: [86, 230],
-    right: [214, 214],
-    prop: "ruler",
-    propAt: [202, 148],
-  },
-  ESFJ: {
-    bg: "#EAF5FD",
-    skin: "#F3C2A4",
-    hair: "#5A382C",
-    cloth: "#6AA4D4",
-    pants: "#3E688E",
-    accent: "#FFF0F3",
-    shoe: "#4A403C",
-    blush: "#F0A8A0",
-    ink: "#3A3038",
-    hairStyle: "bob",
-    face: "grin",
-    outfit: "apron",
-    left: [76, 234],
-    right: [206, 222],
-    prop: "cake",
-    propAt: [180, 180],
-  },
-  ISTP: {
-    bg: "#FFF4D4",
-    skin: "#8D5A3C",
-    hair: "#241C18",
-    cloth: "#E0A020",
-    pants: "#5C5348",
-    accent: "#FFF8E8",
-    shoe: "#2C2824",
-    blush: "#C47D68",
-    ink: "#2C241C",
-    hairStyle: "tuft",
-    face: "calm",
-    hat: "goggles",
-    outfit: "jacket",
-    left: [78, 236],
-    right: [210, 224],
-    prop: "drill",
-    propAt: [186, 176],
-    propRot: -12,
-  },
-  ISFP: {
-    bg: "#FFF6DC",
-    skin: "#F6D7C0",
-    hair: "#3D2C32",
-    cloth: "#F2C14E",
-    pants: "#C48A3A",
-    accent: "#FFF8EE",
-    shoe: "#4A3A34",
-    blush: "#F3B4B4",
-    ink: "#3A2C30",
-    hairStyle: "fluff",
-    face: "soft",
-    hat: "beret",
-    outfit: "sweater",
-    left: [76, 232],
-    right: [208, 220],
-    prop: "palette",
-    propAt: [176, 168],
-    propRot: -8,
-  },
-  ESTP: {
-    bg: "#FFF3CC",
-    skin: "#D3926A",
-    hair: "#2C211C",
-    cloth: "#E39A1A",
-    pants: "#4E463C",
-    accent: "#FFF6D8",
-    shoe: "#2C2824",
-    blush: "#E89080",
-    ink: "#2C241C",
-    hairStyle: "spiky",
-    face: "grin",
-    glasses: "sun",
-    outfit: "jacket",
-    left: [84, 232],
-    right: [214, 196],
-    prop: "bolt",
-    propAt: [190, 148],
-    propRot: 10,
-  },
-  ESFP: {
-    bg: "#FFF5D8",
-    skin: "#F0BE98",
-    hair: "#4E2C28",
-    cloth: "#F0B429",
-    pants: "#D4892A",
-    accent: "#FFF8E4",
-    shoe: "#4A342C",
-    blush: "#F0A0B0",
-    ink: "#3A2A24",
-    hairStyle: "pony",
-    face: "grin",
-    outfit: "jacket",
-    left: [72, 156],
-    right: [210, 206],
-    prop: "mic",
-    propAt: [192, 164],
-  },
-};
-
-function Arm({
+function Limb({
   x1,
   y1,
   x2,
   y2,
   color,
-  skin,
+  width = 16,
 }: {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   color: string;
-  skin: string;
+  width?: number;
 }) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.hypot(dx, dy);
-  const angle = (Math.atan2(dy, dx) * 180) / Math.PI - 90;
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI - 90;
   return (
     <g transform={`translate(${x1} ${y1}) rotate(${angle})`}>
-      <rect x={-8} y={0} width={16} height={len} rx={8} fill={color} />
-      <circle cx={0} cy={len} r={9} fill={skin} />
+      <rect x={-width / 2} y={-2} width={width} height={len + 4} rx={width / 2} fill={color} />
     </g>
   );
 }
 
-function HairBack({ style, color }: { style: HairStyle; color: string }) {
-  if (style === "long") {
-    return (
-      <g fill={color}>
-        <path d="M96 150c-8 36-6 78 6 108 10-34 12-72 14-96z" />
-        <path d="M184 150c8 36 6 78-6 108-10-34-12-72-14-96z" />
-      </g>
-    );
-  }
-  if (style === "bob") {
-    return (
-      <g fill={color}>
-        <rect x="90" y="132" width="24" height="72" rx="12" />
-        <rect x="166" y="132" width="24" height="72" rx="12" />
-      </g>
-    );
-  }
-  if (style === "pony") {
-    return (
-      <g fill={color}>
-        <ellipse cx="196" cy="168" rx="16" ry="36" />
-        <circle cx="196" cy="132" r="10" />
-      </g>
-    );
-  }
-  return null;
+function Hand({ x, y, skin }: { x: number; y: number; skin: string }) {
+  return <circle cx={x} cy={y} r="9" fill={skin} />;
 }
 
-function HairFront({ style, color, accent }: { style: HairStyle; color: string; accent: string }) {
-  const cap = <path d="M94 128c2-46 22-66 46-66s44 20 46 66c-14-22-30-30-46-30s-32 8-46 30z" fill={color} />;
-  if (style === "messy") {
-    return (
-      <g fill={color}>
-        {cap}
-        <circle cx="108" cy="72" r="13" />
-        <circle cx="136" cy="62" r="15" />
-        <circle cx="166" cy="74" r="12" />
-        <circle cx="150" cy="78" r="10" />
+function Head({
+  cx = 140,
+  cy = 108,
+  r = 48,
+  skin,
+  blush,
+  mood = "calm",
+  glasses,
+}: {
+  cx?: number;
+  cy?: number;
+  r?: number;
+  skin: string;
+  blush: string;
+  mood?: "calm" | "soft" | "grin" | "focus";
+  glasses?: "rect" | "round" | "sun";
+}) {
+  const ly = cy + 2;
+  const lx = cx - 16;
+  const rx = cx + 16;
+  return (
+    <g>
+      <ellipse cx={cx - r + 4} cy={cy + 6} rx="8" ry="11" fill={skin} />
+      <ellipse cx={cx + r - 4} cy={cy + 6} rx="8" ry="11" fill={skin} />
+      <circle cx={cx} cy={cy} r={r} fill={skin} />
+      {mood === "focus" ? (
+        <g fill="none" stroke={INK} strokeWidth="2.4" strokeLinecap="round">
+          <path d={`M${lx - 10} ${ly - 14}l14 -4`} />
+          <path d={`M${rx - 2} ${ly - 18}l14 4`} />
+        </g>
+      ) : (
+        <g fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round">
+          <path d={`M${lx - 8} ${ly - 12}c4 -3 10 -3 14 0`} />
+          <path d={`M${rx - 6} ${ly - 12}c4 -3 10 -3 14 0`} />
+        </g>
+      )}
+      {mood === "soft" ? (
+        <g fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round">
+          <path d={`M${lx - 8} ${ly}c4 6 14 6 18 0`} />
+          <path d={`M${rx - 8} ${ly}c4 6 14 6 18 0`} />
+        </g>
+      ) : glasses === "sun" ? null : (
+        <g>
+          <ellipse cx={lx} cy={ly} rx="3.6" ry="4" fill={INK} />
+          <ellipse cx={rx} cy={ly} rx="3.6" ry="4" fill={INK} />
+          <circle cx={lx + 1.2} cy={ly - 1.4} r="1.2" fill="#fff" />
+          <circle cx={rx + 1.2} cy={ly - 1.4} r="1.2" fill="#fff" />
+        </g>
+      )}
+      <ellipse cx={cx - 28} cy={ly + 12} rx="8" ry="4.2" fill={blush} />
+      <ellipse cx={cx + 28} cy={ly + 12} rx="8" ry="4.2" fill={blush} />
+      {mood === "grin" ? (
+        <path d={`M${cx - 14} ${ly + 16}c5 12 23 12 28 0`} fill="#E9897C" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+      ) : mood === "focus" ? (
+        <path d={`M${cx - 8} ${ly + 18}h16`} stroke={INK} strokeWidth="2.3" strokeLinecap="round" />
+      ) : (
+        <path d={`M${cx - 10} ${ly + 16}c4 7 16 7 20 0`} fill="none" stroke={INK} strokeWidth="2.3" strokeLinecap="round" />
+      )}
+      {glasses === "rect" ? (
+        <g fill="none" stroke={INK} strokeWidth="2.4">
+          <rect x={lx - 14} y={ly - 12} width="28" height="20" rx="4" fill="#fff" fillOpacity="0.15" />
+          <rect x={rx - 14} y={ly - 12} width="28" height="20" rx="4" fill="#fff" fillOpacity="0.15" />
+          <path d={`M${lx + 14} ${ly}h${rx - lx - 28}`} />
+        </g>
+      ) : null}
+      {glasses === "round" ? (
+        <g fill="none" stroke={INK} strokeWidth="2.4">
+          <circle cx={lx} cy={ly} r="13" fill="#fff" fillOpacity="0.12" />
+          <circle cx={rx} cy={ly} r="13" fill="#fff" fillOpacity="0.12" />
+          <path d={`M${lx + 13} ${ly}h${rx - lx - 26}`} />
+        </g>
+      ) : null}
+      {glasses === "sun" ? (
+        <g>
+          <rect x={lx - 16} y={ly - 10} width="30" height="16" rx="6" fill="#243044" />
+          <rect x={rx - 14} y={ly - 10} width="30" height="16" rx="6" fill="#243044" />
+          <path d={`M${lx + 14} ${ly - 2}h${rx - lx - 28}`} stroke="#243044" strokeWidth="3" />
+        </g>
+      ) : null}
+    </g>
+  );
+}
+
+function Legs({
+  x = 140,
+  y = 232,
+  pants,
+  shoe,
+}: {
+  x?: number;
+  y?: number;
+  pants: string;
+  shoe: string;
+}) {
+  return (
+    <g>
+      <rect x={x - 24} y={y} width="18" height="58" rx="9" fill={pants} />
+      <rect x={x + 6} y={y} width="18" height="58" rx="9" fill={pants} />
+      <ellipse cx={x - 15} cy={y + 58} rx="16" ry="8" fill={shoe} />
+      <ellipse cx={x + 15} cy={y + 58} rx="16" ry="8" fill={shoe} />
+    </g>
+  );
+}
+
+function PortraitINTJ() {
+  const skin = "#F3C7A6";
+  return (
+    <g>
+      <Backdrop color="#EDE4F8" />
+      <Legs y={214} pants="#46367A" shoe="#2E2644" />
+      <path d="M92 156c-12 34-2 70 22 76h52c24-6 34-42 22-76-14-12-82-12-96 0z" fill="#6B52B0" />
+      <path d="M112 160l18 40 8-2-16-42z" fill="#4A3884" />
+      <path d="M168 160l-18 40-8-2 16-42z" fill="#4A3884" />
+      <path d="M122 156h36l-8 22h-20z" fill="#F7F4FC" />
+      <path d="M136 164l6 8-6 24-6-24z" fill="#CDBEF0" />
+      <Limb x1={108} y1={176} x2={78} y2={230} color="#6B52B0" />
+      <Hand x={78} y={230} skin={skin} />
+      <path d="M40 236h200l-16 18H56z" fill="#D4C4F2" />
+      <rect x="70" y="252" width="14" height="52" rx="4" fill="#B39ADF" />
+      <rect x="196" y="252" width="14" height="52" rx="4" fill="#B39ADF" />
+      <g transform="translate(86 208) rotate(-7)">
+        <rect width="112" height="48" rx="4" fill="#F8F4EA" />
+        <path d="M12 14h46M12 24h78M12 34h36" stroke="#7C6BB8" strokeWidth="2.2" strokeLinecap="round" />
+        <rect x="68" y="10" width="32" height="26" fill="none" stroke="#7C6BB8" strokeWidth="1.8" />
       </g>
-    );
-  }
-  if (style === "curly") {
-    return (
-      <g fill={color}>
-        {cap}
-        <circle cx="96" cy="104" r="15" />
-        <circle cx="112" cy="74" r="15" />
-        <circle cx="140" cy="64" r="17" />
-        <circle cx="168" cy="74" r="14" />
-        <circle cx="184" cy="102" r="14" />
+      <rect x="198" y="214" width="34" height="16" rx="8" fill="#E7D8BC" />
+      <ellipse cx="156" cy="236" rx="14" ry="8" fill={skin} />
+      <Head cy={100} skin={skin} blush="#F0B4BA" mood="focus" glasses="rect" />
+      <path d="M98 96c6-42 26-58 48-54 20 4 34 24 36 50-16-20-36-26-52-16-14 8-26 14-32 20z" fill="#E7E2F4" />
+      <path d="M118 62c14-6 32-4 42 6" fill="none" stroke="#CFC6E6" strokeWidth="4" strokeLinecap="round" />
+    </g>
+  );
+}
+
+function PortraitINTP() {
+  const skin = "#E7B48E";
+  return (
+    <g>
+      <Backdrop color="#E7E0F6" />
+      <Legs pants="#4A4068" shoe="#3A342C" />
+      <path d="M96 150c-14 36 0 74 20 80h48c20-6 34-44 20-80-14-14-74-14-88 0z" fill="#7D6CC0" />
+      <path d="M118 150h44l-10 22h-24z" fill="#F4EFE6" />
+      <Limb x1={108} y1={170} x2={70} y2={214} color="#7D6CC0" />
+      <Limb x1={172} y1={170} x2={214} y2={196} color="#7D6CC0" />
+      <g transform="translate(46 176) rotate(-12)">
+        <rect width="40" height="52" rx="3" fill="#F7F1E6" />
+        <rect width="10" height="52" fill="#5C478F" />
+        <path d="M16 14h16M16 24h16M16 34h10" stroke="#C4B2EE" strokeWidth="2" strokeLinecap="round" />
       </g>
-    );
-  }
-  if (style === "spiky") {
-    return (
-      <g fill={color}>
-        {cap}
-        <polygon points="140,48 154,84 126,84" />
-        <polygon points="104,64 128,90 96,100" />
-        <polygon points="176,64 184,102 154,88" />
+      <Hand x={62} y={214} skin={skin} />
+      <g transform="translate(188 150)">
+        <rect x="14" y="0" width="12" height="16" rx="3" fill="#F4F0FA" stroke={INK} strokeWidth="1.6" />
+        <path d="M8 16h24c10 12 16 26 8 40-8 16-32 16-40 0-8-14-2-28 8-40z" fill="#C9B6F2" stroke={INK} strokeWidth="1.6" />
+        <ellipse cx="20" cy="48" rx="14" ry="6" fill="#8E74D4" opacity="0.55" />
+        <circle cx="16" cy="36" r="3" fill="#fff" opacity="0.7" />
+        <circle cx="24" cy="42" r="2" fill="#fff" opacity="0.7" />
       </g>
-    );
-  }
-  if (style === "fluff") {
-    return (
-      <g fill={color}>
-        {cap}
-        <circle cx="104" cy="86" r="14" />
-        <circle cx="176" cy="86" r="14" />
-        <circle cx="140" cy="70" r="16" />
+      <Hand x={206} y={188} skin={skin} />
+      <Head cy={104} skin={skin} blush="#E8A898" mood="calm" glasses="round" />
+      <g fill="#3E342C">
+        <circle cx="112" cy="64" r="14" />
+        <circle cx="140" cy="54" r="16" />
+        <circle cx="168" cy="66" r="13" />
+        <path d="M96 108c4-40 24-58 44-58s40 18 44 58c-12-18-28-26-44-26s-32 8-44 26z" />
       </g>
-    );
-  }
-  if (style === "tuft") {
-    return (
-      <g fill={color}>
-        {cap}
-        <ellipse cx="124" cy="66" rx="10" ry="16" />
-        <ellipse cx="148" cy="70" rx="8" ry="12" />
+    </g>
+  );
+}
+
+function PortraitENTJ() {
+  const skin = "#F6D0B4";
+  return (
+    <g>
+      <Backdrop color="#F0E4F8" />
+      <Legs pants="#3A305C" shoe="#2A2438" />
+      <path d="M90 148c-8 40 4 78 26 82h48c22-4 34-42 26-82-16-12-84-12-100 0z" fill="#5C478F" />
+      <path d="M108 154l22 46 10-4-18-46z" fill="#3E326C" />
+      <path d="M172 154l-22 46-10-4 18-46z" fill="#3E326C" />
+      <path d="M124 148h32l-6 20h-20z" fill="#F8F4FC" />
+      <path d="M136 156l5 7-5 22-5-22z" fill="#E7C56A" />
+      <Limb x1={104} y1={176} x2={78} y2={214} color="#5C478F" />
+      <ellipse cx="74" cy="228" rx="16" ry="10" fill={skin} />
+      <Limb x1={176} y1={164} x2={214} y2={118} color="#5C478F" />
+      <Hand x={214} y={112} skin={skin} />
+      <path d="M214 96l18 10-16 8z" fill={skin} />
+      <Head cy={100} skin={skin} blush="#F0B0B0" mood="focus" />
+      <path d="M96 96c2-40 22-56 44-56s42 16 44 56c-12-16-28-22-44-22s-32 6-44 22z" fill="#2C2438" />
+      <path d="M168 78c16 6 26 20 22 34-14-8-26-6-36 2 4-14 8-26 14-36z" fill="#2C2438" />
+    </g>
+  );
+}
+
+function PortraitENTP() {
+  const skin = "#D9A57C";
+  return (
+    <g>
+      <Backdrop color="#EFE6FA" />
+      <path d="M78 214h124l-14 78H92z" fill="#CDBEF0" />
+      <rect x="108" y="214" width="64" height="12" rx="3" fill="#8B6AD2" />
+      <path d="M96 228h18M166 228h18" stroke="#6B52B0" strokeWidth="4" strokeLinecap="round" />
+      <path d="M100 156c-8 28 2 52 18 56h44c16-4 26-28 18-56-12-10-68-10-80 0z" fill="#8B6AD2" />
+      <path d="M126 156h28v16h-28z" fill="#FFF6D4" />
+      <Limb x1={112} y1={176} x2={86} y2={210} color="#8B6AD2" />
+      <Hand x={86} y={210} skin={skin} />
+      <Limb x1={168} y1={164} x2={206} y2={124} color="#8B6AD2" />
+      <Hand x={206} y={118} skin={skin} />
+      <polygon points="188,92 194,108 210,108 198,118 202,134 188,124 174,134 178,118 166,108 182,108" fill="#FFF6D4" stroke={INK} strokeWidth="1.4" />
+      <Head cy={108} skin={skin} blush="#E89888" mood="grin" />
+      <g fill="#4A3428">
+        <path d="M96 112c4-42 24-60 44-60s40 18 44 60c-12-18-28-26-44-26s-32 8-44 26z" />
+        <circle cx="100" cy="100" r="13" />
+        <circle cx="180" cy="100" r="13" />
       </g>
-    );
-  }
-  if (style === "bun") {
-    return (
-      <g fill={color}>
+    </g>
+  );
+}
+
+function PortraitINFJ() {
+  const skin = "#F3C7A8";
+  return (
+    <g>
+      <Backdrop color="#E5F6EA" />
+      <rect x="206" y="78" width="10" height="214" rx="5" fill="#8D6A3A" />
+      <circle cx="211" cy="70" r="14" fill="#7DB88A" />
+      <circle cx="211" cy="70" r="6" fill="#F6E7A8" />
+      <path d="M78 168c-18 48-4 112 28 124h68c32-12 46-76 28-124-18-16-106-16-124 0z" fill="#3E8A5C" />
+      <path d="M128 168h24l-4 108h-16z" fill="#F6E7A8" />
+      <circle cx="140" cy="230" r="6" fill="#C6A15A" />
+      <Limb x1={168} y1={190} x2={206} y2={168} color="#3E8A5C" width={18} />
+      <Hand x={204} y={160} skin={skin} />
+      <Head cy={112} skin={skin} blush="#F0B4B4" mood="soft" />
+      <g fill="#F7F4EE">
+        <path d="M92 120c0-48 22-70 48-70s48 22 48 70c-8 20-20 28-48 28s-40-8-48-28z" />
+        <path d="M96 130c-6 40-2 80 10 110 12-30 14-70 8-100z" />
+        <path d="M184 130c6 40 2 80-10 110-12-30-14-70-8-100z" />
+        <ellipse cx="140" cy="156" rx="30" ry="18" />
+        <ellipse cx="116" cy="150" rx="14" ry="12" />
+        <ellipse cx="164" cy="150" rx="14" ry="12" />
+      </g>
+      <path d="M116 118c4 5 12 5 16 0" fill="none" stroke={INK} strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M148 118c4 5 12 5 16 0" fill="none" stroke={INK} strokeWidth="2.4" strokeLinecap="round" />
+    </g>
+  );
+}
+
+function PortraitINFP() {
+  const skin = "#C98662";
+  return (
+    <g>
+      <Backdrop color="#E7F7EC" />
+      <Legs pants="#4E6E58" shoe="#3A302C" />
+      <path d="M98 154c-12 36 0 70 18 76h48c18-6 30-40 18-76-12-12-72-12-84 0z" fill="#7DB88A" />
+      <path d="M120 154h40l-8 18h-24z" fill="#F7F3EA" />
+      <Limb x1={110} y1={176} x2={76} y2={220} color="#7DB88A" />
+      <Hand x={76} y={220} skin={skin} />
+      <Limb x1={170} y1={176} x2={206} y2={200} color="#7DB88A" />
+      <Hand x={200} y={196} skin={skin} />
+      <g transform="translate(196 150)">
+        <path d="M18 70c0-28 4-48 4-48" stroke="#3E7A4C" strokeWidth="3" fill="none" />
+        <circle cx="22" cy="16" r="12" fill="#F2A3B5" />
+        <circle cx="22" cy="16" r="5" fill="#F6D56A" />
+      </g>
+      <Head cy={104} skin={skin} blush="#E8A090" mood="soft" />
+      <g fill="#3A2A28">
+        <path d="M96 108c4-40 22-58 44-58s40 18 44 58c-10-16-26-24-44-24s-34 8-44 24z" />
+        <path d="M100 112c8-6 18-14 40-14s32 8 40 14c-10-4-22-8-40-8s-30 4-40 8z" />
+      </g>
+      <g>
+        <circle cx="112" cy="62" r="8" fill="#F2A3B5" />
+        <circle cx="112" cy="62" r="3" fill="#F6D56A" />
+        <circle cx="142" cy="52" r="9" fill="#F6D56A" />
+        <circle cx="142" cy="52" r="3.5" fill="#F2A3B5" />
+        <circle cx="170" cy="64" r="8" fill="#F2A3B5" />
+        <circle cx="170" cy="64" r="3" fill="#7DB88A" />
+      </g>
+      <g transform="translate(214 118)">
+        <ellipse cx="0" cy="6" rx="4" ry="8" fill="#7DB88A" transform="rotate(-24)" />
+        <ellipse cx="10" cy="6" rx="4" ry="8" fill="#7DB88A" transform="rotate(24)" />
+        <circle cx="5" cy="8" r="2.4" fill="#3E6B50" />
+      </g>
+    </g>
+  );
+}
+
+function PortraitENFJ() {
+  const skin = "#F6D0B0";
+  return (
+    <g>
+      <Backdrop color="#E3F6E8" />
+      <Legs pants="#2F5E44" shoe="#2C3830" />
+      <path d="M92 150c-12 38 2 74 24 78h48c22-4 36-40 24-78-16-12-80-12-96 0z" fill="#3F8F62" />
+      <path d="M124 150h32v18h-32z" fill="#F8E7C4" />
+      <path d="M118 196h44v10h-44z" fill="#C6A15A" />
+      <Limb x1={108} y1={172} x2={72} y2={210} color="#3F8F62" />
+      <Hand x={70} y={210} skin={skin} />
+      <Limb x1={176} y1={168} x2={210} y2={150} color="#3F8F62" />
+      <Hand x={208} y={146} skin={skin} />
+      <g transform="translate(198 52)">
+        <rect x="14" y="0" width="8" height="78" rx="2" fill="#E7EEE8" stroke={INK} strokeWidth="2" />
+        <rect x="4" y="74" width="28" height="8" rx="2" fill="#C6A15A" />
+        <rect x="14" y="82" width="8" height="14" rx="2" fill="#8D6A32" />
+      </g>
+      <Head cy={102} skin={skin} blush="#F0A8B4" mood="grin" />
+      <path d="M98 100c4-38 22-54 42-54s38 16 42 54c-12-16-26-22-42-22s-30 6-42 22z" fill="#3A2E32" />
+    </g>
+  );
+}
+
+function PortraitENFP() {
+  const skin = "#E8B48A";
+  return (
+    <g>
+      <Backdrop color="#E8F8EC" />
+      <ellipse cx="140" cy="308" rx="36" ry="7" fill={INK} opacity="0.06" />
+      <g transform="translate(168 132)">
+        <rect width="46" height="58" rx="14" fill="#3E7A4C" />
+        <rect x="8" y="10" width="30" height="22" rx="6" fill="#62B56C" />
+        <circle cx="23" cy="40" r="4" fill="#FFE08A" />
+      </g>
+      <Limb x1={150} y1={176} x2={176} y2={214} color="#3E7A4C" width={18} />
+      <Limb x1={176} y1={214} x2={156} y2={248} color="#3E7A4C" width={16} />
+      <ellipse cx="150" cy="254" rx="16" ry="8" fill="#4A3428" />
+      <Limb x1={124} y1={178} x2={96} y2={214} color="#3E7A4C" width={18} />
+      <Limb x1={96} y1={214} x2={118} y2={246} color="#3E7A4C" width={16} />
+      <ellipse cx="124" cy="252" rx="16" ry="8" fill="#4A3428" />
+      <path d="M108 132c-10 20 0 48 16 52h36c14-4 24-28 16-50-10-12-58-14-68-2z" fill="#62B56C" />
+      <path d="M124 134h28l-4 12h-20z" fill="#FFE08A" />
+      <Limb x1={118} y1={150} x2={78} y2={96} color="#62B56C" />
+      <Hand x={74} y={90} skin={skin} />
+      <Limb x1={164} y1={150} x2={206} y2={132} color="#62B56C" />
+      <Hand x={208} y={128} skin={skin} />
+      <Head cy={92} r={46} skin={skin} blush="#EEA088" mood="grin" />
+      <g fill="#5A341F">
+        <circle cx="104" cy="70" r="14" />
+        <circle cx="128" cy="52" r="15" />
+        <circle cx="154" cy="48" r="16" />
+        <circle cx="178" cy="64" r="14" />
+        <circle cx="96" cy="92" r="12" />
+        <circle cx="186" cy="90" r="12" />
+        <path d="M98 96c2-28 20-40 42-40s40 12 44 40c-12-12-26-16-44-16s-32 4-42 16z" />
+      </g>
+    </g>
+  );
+}
+
+function PortraitISTJ() {
+  const skin = "#F4D2B4";
+  return (
+    <g>
+      <Backdrop color="#E6F2FC" />
+      <Legs pants="#2E4E74" shoe="#2A3340" />
+      <path d="M96 150c-12 36 0 72 20 78h48c20-6 32-42 20-78-14-12-74-12-88 0z" fill="#4F82C4" />
+      <path d="M116 154l16 36 8-2-14-38z" fill="#2E4E74" />
+      <path d="M164 154l-16 36-8-2 14-38z" fill="#2E4E74" />
+      <path d="M124 150h32l-6 16h-20z" fill="#F7F5F2" />
+      <path d="M136 156l4 6-4 16-4-16z" fill="#D5E4F4" />
+      <Limb x1={112} y1={176} x2={86} y2={210} color="#4F82C4" />
+      <Limb x1={168} y1={176} x2={198} y2={206} color="#4F82C4" />
+      <g transform="translate(78 168) rotate(-8)">
+        <rect width="92" height="112" rx="8" fill="#fff" stroke={INK} strokeWidth="2.2" />
+        <rect x="28" y="-8" width="36" height="16" rx="4" fill="#D5E4F4" stroke={INK} strokeWidth="2" />
+        <path d="M16 28h60M16 44h60M16 60h60M16 76h40" stroke="#7FA4D0" strokeWidth="3" strokeLinecap="round" />
+        <path d="M16 28l6 6 10-12" fill="none" stroke="#3D74B0" strokeWidth="2.4" />
+      </g>
+      <Hand x={86} y={250} skin={skin} />
+      <Hand x={168} y={246} skin={skin} />
+      <Head cy={102} skin={skin} blush="#F0B4AE" mood="calm" />
+      <path d="M98 100c4-40 22-56 42-56s38 16 42 56c-8-18-24-26-42-26s-34 8-42 26z" fill="#2A3344" />
+      <path d="M108 92c16-16 40-16 58-4" fill="#2A3344" />
+    </g>
+  );
+}
+
+function PortraitISFJ() {
+  const skin = "#E0A67E";
+  return (
+    <g>
+      <Backdrop color="#E8F4FC" />
+      <Legs pants="#3E6488" shoe="#3A4048" />
+      <path d="M96 152c-14 40 0 78 22 82h44c22-4 36-42 22-82-14-14-74-14-88 0z" fill="#7EADD8" />
+      <path d="M118 176h44l-6 52h-32z" fill="#FFF8F4" />
+      <Limb x1={108} y1={176} x2={70} y2={210} color="#7EADD8" />
+      <Limb x1={174} y1={174} x2={214} y2={196} color="#7EADD8" />
+      <g transform="translate(52 188)">
+        <circle cx="22" cy="28" r="30" fill="#F7FBFF" stroke="#3D74B0" strokeWidth="5" />
+        <path d="M22 16c0-8 12-8 12 2 0-10 12-10 12-2 0 12-12 18-12 18s-12-6-12-18z" fill="#E07A8C" />
+      </g>
+      <Hand x={78} y={214} skin={skin} />
+      <g transform="translate(206 168)">
+        <path d="M10 36c0-20 2-32 2-32" stroke="#3E7A4C" strokeWidth="3" />
+        <circle cx="12" cy="8" r="10" fill="#F2A3B5" />
+        <circle cx="12" cy="8" r="4" fill="#F6D56A" />
+      </g>
+      <Hand x={214} y={196} skin={skin} />
+      <Head cy={104} skin={skin} blush="#E89898" mood="soft" />
+      <g fill="#4A3034">
         <circle cx="140" cy="58" r="16" />
-        {cap}
+        <path d="M96 108c2-40 22-58 44-58s42 18 44 58c-12-16-28-24-44-24s-32 8-44 24z" />
       </g>
-    );
-  }
-  if (style === "sleek") {
-    return (
-      <g fill={color}>
-        {cap}
-        <path d="M168 96c18 4 28 18 24 32-16-6-28-6-40 2 6-14 10-24 16-34z" />
-      </g>
-    );
-  }
-  if (style === "wavy") {
-    return (
-      <g fill={color}>
-        {cap}
-        <circle cx="98" cy="108" r="14" />
-        <circle cx="182" cy="108" r="14" />
-        <path d="M150 70c16 2 28 14 30 28-12-8-22-8-34 0 2-12 2-22 4-28z" />
-      </g>
-    );
-  }
-  if (style === "bangs") {
-    return (
-      <g fill={color}>
-        {cap}
-        <path d="M100 118c8-8 18-18 40-18s32 10 40 18c-10-6-22-10-40-10s-30 4-40 10z" />
-      </g>
-    );
-  }
-  if (style === "side" || style === "neat" || style === "soft") {
-    return (
-      <g fill={color}>
-        {cap}
-        <path d="M102 112c18-22 46-28 70-16 2 2-10 12-24 12-18 0-32-2-46 4z" />
-      </g>
-    );
-  }
-  if (style === "long" || style === "pony" || style === "bob") {
-    return (
-      <g fill={color}>
-        {cap}
-        <path d="M104 116c10-20 24-28 36-28s28 10 36 28c-12-10-24-14-36-14s-24 4-36 14z" />
-        {style === "pony" ? <circle cx="188" cy="112" r="7" fill={accent} /> : null}
-      </g>
-    );
-  }
-  return (
-    <g fill={color}>
-      {cap}
     </g>
   );
 }
 
-function Face({ look }: { look: Look }) {
-  const { ink, blush, face } = look;
-  const joy = face === "grin";
+function PortraitESTJ() {
+  const skin = "#C6865A";
   return (
     <g>
-      {face === "focus" ? (
-        <g fill="none" stroke={ink} strokeWidth="2.4" strokeLinecap="round">
-          <path d="M110 108l16-4" />
-          <path d="M154 104l16 4" />
-        </g>
-      ) : (
-        <g fill="none" stroke={ink} strokeWidth="2.2" strokeLinecap="round">
-          <path d="M112 110c4-3 10-3 14 0" />
-          <path d="M154 110c4-3 10-3 14 0" />
-        </g>
-      )}
-      {face === "soft" ? (
-        <g fill="none" stroke={ink} strokeWidth="2.4" strokeLinecap="round">
-          <path d="M114 124c4 5 12 5 16 0" />
-          <path d="M150 124c4 5 12 5 16 0" />
-        </g>
-      ) : (
-        <g>
-          <ellipse cx="122" cy="124" rx="3.4" ry="3.8" fill={ink} />
-          <ellipse cx="158" cy="124" rx="3.4" ry="3.8" fill={ink} />
-          <circle cx="123.2" cy="122.8" r="1.15" fill="white" />
-          <circle cx="159.2" cy="122.8" r="1.15" fill="white" />
-        </g>
-      )}
-      <ellipse cx="104" cy="134" rx="8" ry="4" fill={blush} opacity="0.95" />
-      <ellipse cx="176" cy="134" rx="8" ry="4" fill={blush} opacity="0.95" />
-      {joy ? (
-        <path d="M124 140c6 12 22 12 28 0" fill="#E9897C" stroke={ink} strokeWidth="2" strokeLinejoin="round" />
-      ) : face === "soft" ? (
-        <path d="M128 142c4 6 16 6 20 0" fill="none" stroke={ink} strokeWidth="2.3" strokeLinecap="round" />
-      ) : face === "focus" ? (
-        <path d="M130 144h16" stroke={ink} strokeWidth="2.3" strokeLinecap="round" />
-      ) : (
-        <path d="M128 142c5 6 16 6 22 0" fill="none" stroke={ink} strokeWidth="2.3" strokeLinecap="round" />
-      )}
+      <Backdrop color="#E5F1FC" />
+      <Legs pants="#2A4C72" shoe="#2A3038" />
+      <path d="M92 148c-10 38 2 76 24 80h48c22-4 34-42 24-80-16-12-80-12-96 0z" fill="#3D74B0" />
+      <path d="M114 152l16 38 8-2-14-40z" fill="#2A4C72" />
+      <path d="M166 152l-16 38-8-2 14-40z" fill="#2A4C72" />
+      <path d="M124 148h32l-6 18h-20z" fill="#F4F7FB" />
+      <path d="M136 154l5 6-5 18-5-18z" fill="#F0D48A" />
+      <Limb x1={108} y1={176} x2={74} y2={228} color="#3D74B0" />
+      <g transform="translate(46 214)">
+        <rect width="40" height="30" rx="4" fill="#2E4E74" />
+        <rect x="12" y="-8" width="16" height="10" rx="3" fill="#2E4E74" />
+        <rect x="4" y="8" width="32" height="3" fill="#F0D48A" />
+      </g>
+      <Hand x={78} y={220} skin={skin} />
+      <Limb x1={176} y1={164} x2={214} y2={132} color="#3D74B0" />
+      <Hand x={210} y={128} skin={skin} />
+      <g transform="translate(196 96) rotate(18)">
+        <polygon points="0,16 36,0 36,40 0,24" fill="#F4E2A8" stroke={INK} strokeWidth="1.6" />
+        <rect x="32" y="8" width="16" height="24" rx="4" fill="#3D74B0" />
+        <path d="M52 12c10 4 10 16 0 20" fill="none" stroke={INK} strokeWidth="2" />
+      </g>
+      <Head cy={100} skin={skin} blush="#D98B78" mood="focus" />
+      <path d="M100 98c2-32 18-46 40-46s38 14 40 46c-10-14-24-18-40-18s-30 4-40 18z" fill="#2A241F" />
     </g>
   );
 }
 
-function Glasses({ look }: { look: Look }) {
-  if (!look.glasses) return null;
-  const ink = look.ink;
-  if (look.glasses === "sun") {
-    return (
-      <g>
-        <rect x="106" y="116" width="26" height="16" rx="6" fill="#2C3444" />
-        <rect x="148" y="116" width="26" height="16" rx="6" fill="#2C3444" />
-        <path d="M132 124h16" stroke="#2C3444" strokeWidth="3" />
-        <path d="M108 122h-8M174 122h8" stroke="#2C3444" strokeWidth="2.4" strokeLinecap="round" />
-      </g>
-    );
-  }
-  if (look.glasses === "round") {
-    return (
-      <g fill="none" stroke={ink} strokeWidth="2.3">
-        <circle cx="122" cy="124" r="13" fill="white" fillOpacity="0.18" />
-        <circle cx="158" cy="124" r="13" fill="white" fillOpacity="0.18" />
-        <path d="M135 124h10" />
-        <path d="M109 122h-6M171 122h6" strokeLinecap="round" />
-      </g>
-    );
-  }
-  return (
-    <g fill="none" stroke={ink} strokeWidth="2.3">
-      <rect x="106" y="114" width="28" height="20" rx="5" fill="white" fillOpacity="0.15" />
-      <rect x="146" y="114" width="28" height="20" rx="5" fill="white" fillOpacity="0.15" />
-      <path d="M134 124h12" />
-      <path d="M106 122h-6M174 122h6" strokeLinecap="round" />
-    </g>
-  );
-}
-
-function Hat({ look }: { look: Look }) {
-  if (look.hat === "beret") {
-    return (
-      <g>
-        <ellipse cx="146" cy="74" rx="36" ry="14" fill={look.hair} />
-        <circle cx="176" cy="72" r="5" fill={look.cloth} />
-      </g>
-    );
-  }
-  if (look.hat === "nurse") {
-    return (
-      <g>
-        <path d="M112 78h56c2 18-12 28-28 28s-30-10-28-28z" fill="#F7FBFF" />
-        <circle cx="140" cy="90" r="7" fill="#F4C2CC" />
-        <path d="M140 86v8M136 90h8" stroke="#C45B70" strokeWidth="1.7" strokeLinecap="round" />
-      </g>
-    );
-  }
-  if (look.hat === "goggles") {
-    return (
-      <g>
-        <path d="M104 84h72" stroke={look.hair} strokeWidth="4" strokeLinecap="round" />
-        <circle cx="122" cy="84" r="11" fill="#D7F1F8" stroke={look.ink} strokeWidth="2.2" />
-        <circle cx="158" cy="84" r="11" fill="#D7F1F8" stroke={look.ink} strokeWidth="2.2" />
-        <path d="M133 84h14" stroke={look.ink} strokeWidth="2.2" />
-      </g>
-    );
-  }
-  return null;
-}
-
-function Outfit({ look }: { look: Look }) {
-  const robe = look.outfit === "robe";
-  const torso = robe
-    ? "M92 200c-16 42 0 74 28 78h40c28-4 44-36 28-78-16-16-80-16-96 0z"
-    : "M104 198c-14 38-2 66 16 70h40c18-4 30-32 16-70-14-12-58-12-72 0z";
+function PortraitESFJ() {
+  const skin = "#F3C2A4";
   return (
     <g>
-      <path d={torso} fill={look.cloth} />
-      {look.outfit === "suit" ? (
-        <g>
-          <path d="M118 202l16 34 8-2-18-36z" fill={look.pants} />
-          <path d="M162 202l-16 34-8-2 18-36z" fill={look.pants} />
-          <path d="M126 198h28l-6 24h-16z" fill={look.accent} />
-          {look.tie ? <path d="M136 206l5 7-5 22-5-22z" fill={look.tie} /> : null}
-        </g>
-      ) : null}
-      {look.outfit === "sweater" ? <path d="M120 198h40l-8 18h-24z" fill={look.accent} /> : null}
-      {look.outfit === "robe" ? (
-        <g>
-          <path d="M132 200h16l-2 70h-12z" fill={look.accent} />
-          <circle cx="140" cy="236" r="5" fill={look.tie ?? look.accent} />
-        </g>
-      ) : null}
-      {look.outfit === "apron" ? (
-        <g>
-          <path d="M118 214h44l-4 50h-36z" fill={look.accent} />
-          <path d="M122 214c6-10 30-10 36 0" fill="none" stroke={look.accent} strokeWidth="5" />
-          <circle cx="140" cy="236" r="3" fill={look.cloth} />
-        </g>
-      ) : null}
-      {look.outfit === "jacket" ? (
-        <g>
-          <path d="M128 200h24v20h-24z" fill={look.accent} />
-          <path d="M112 214h14v10h-14z" fill={look.ink} opacity="0.12" />
-          <path d="M154 214h14v10h-14z" fill={look.ink} opacity="0.12" />
-        </g>
-      ) : null}
+      <Backdrop color="#EAF5FD" />
+      <Legs pants="#3E688E" shoe="#4A403C" />
+      <path d="M96 150c-12 38 0 76 22 80h44c22-4 34-42 22-80-14-12-74-12-88 0z" fill="#6AA4D4" />
+      <path d="M116 176h48l-4 48h-40z" fill="#FFF0F3" />
+      <Limb x1={112} y1={176} x2={96} y2={214} color="#6AA4D4" />
+      <Limb x1={168} y1={176} x2={186} y2={214} color="#6AA4D4" />
+      <g transform="translate(78 196)">
+        <ellipse cx="62" cy="28" rx="58" ry="10" fill="#E7D3B0" />
+        <rect x="28" y="28" width="68" height="10" rx="3" fill="#D7C09A" />
+        <path d="M40 28c0-16 16-22 22-22s22 6 22 22" fill="#F7C5D4" />
+        <path d="M44 16c6-10 28-10 34 0" fill="#FFF6F8" />
+        <circle cx="62" cy="8" r="6" fill="#E25B5B" />
+        <rect x="60" y="0" width="4" height="8" fill="#3E7A4C" />
+      </g>
+      <Hand x={96} y={214} skin={skin} />
+      <Hand x={186} y={214} skin={skin} />
+      <Head cy={102} skin={skin} blush="#F0A8A0" mood="grin" />
+      <g fill="#5A382C">
+        <path d="M92 108c2-44 24-62 48-62s46 18 48 62c-8-16-24-24-48-24s-40 8-48 24z" />
+        <rect x="92" y="100" width="22" height="64" rx="11" />
+        <rect x="166" y="100" width="22" height="64" rx="11" />
+      </g>
     </g>
   );
 }
 
-function PropArt({ kind, accent, ink }: { kind: PropKind; accent: string; ink: string }) {
-  switch (kind) {
-    case "blueprint":
-      return (
-        <g>
-          <ellipse cx="6" cy="28" rx="6" ry="20" fill="#E4D4B8" />
-          <rect x="6" y="8" width="34" height="40" rx="3" fill="#F7F3EA" />
-          <ellipse cx="40" cy="28" rx="6" ry="20" fill="#EFE4CC" />
-          <path d="M14 18h18M14 26h22M14 34h14" stroke="#7C6BB8" strokeWidth="2" strokeLinecap="round" />
-        </g>
-      );
-    case "cube":
-      return (
-        <g>
-          <polygon points="24,2 48,16 24,30 0,16" fill="#E4D8FA" />
-          <polygon points="0,16 24,30 24,54 0,40" fill="#C4B2EE" />
-          <polygon points="24,30 48,16 48,40 24,54" fill="#8E74D4" />
-        </g>
-      );
-    case "baton":
-      return (
-        <g>
-          <rect x="8" y="4" width="8" height="46" rx="4" fill={accent} stroke={ink} strokeWidth="2" />
-          <circle cx="12" cy="8" r="5" fill="#E7C56A" />
-        </g>
-      );
-    case "spark":
-      return (
-        <g>
-          <polygon
-            points="28,0 33,16 50,16 36,26 42,44 28,34 14,44 20,26 6,16 23,16"
-            fill={accent}
-            stroke={ink}
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-        </g>
-      );
-    case "lantern":
-      return (
-        <g>
-          <path d="M18 10c0-8 12-8 12 0" fill="none" stroke={ink} strokeWidth="2.2" />
-          <rect x="10" y="10" width="28" height="34" rx="12" fill={accent} />
-          <circle cx="24" cy="26" r="6" fill="#FFF8DC" />
-          <path d="M16 44h16" stroke={ink} strokeWidth="2" strokeLinecap="round" />
-        </g>
-      );
-    case "book":
-      return (
-        <g>
-          <path d="M4 12c12-8 20-8 24 0v30c-6-6-14-6-24 0z" fill="#F7F3EA" stroke={ink} strokeWidth="1.8" />
-          <path d="M28 12c12-8 20-8 24 0v30c-6-6-14-6-24 0z" fill="#E7F3EA" stroke={ink} strokeWidth="1.8" />
-          <path d="M28 12v30" stroke={ink} strokeWidth="1.6" />
-          <g fill="#7DB88A" transform="translate(40 0)">
-            <ellipse cx="8" cy="10" rx="3" ry="6" transform="rotate(-30 8 10)" />
-            <ellipse cx="14" cy="10" rx="3" ry="6" transform="rotate(30 14 10)" />
-            <circle cx="11" cy="12" r="2" fill="#3E6B50" />
-          </g>
-        </g>
-      );
-    case "sword":
-      return (
-        <g>
-          <rect x="16" y="0" width="7" height="48" rx="2" fill="#E7EEE8" stroke={ink} strokeWidth="2" />
-          <rect x="6" y="44" width="28" height="7" rx="2" fill="#C6A15A" />
-          <rect x="16" y="50" width="7" height="12" rx="2" fill="#8D6A32" />
-        </g>
-      );
-    case "stars":
-      return (
-        <g fill={accent} stroke={ink} strokeWidth="1.4" strokeLinejoin="round">
-          <polygon points="16,2 19,12 30,12 21,18 24,28 16,22 8,28 11,18 2,12 13,12" />
-          <polygon points="36,16 38,22 44,22 39,26 41,32 36,28 31,32 33,26 28,22 34,22" />
-        </g>
-      );
-    case "clipboard":
-      return (
-        <g>
-          <rect x="8" y="10" width="34" height="44" rx="5" fill="white" stroke={ink} strokeWidth="2" />
-          <rect x="16" y="4" width="18" height="10" rx="3" fill={accent} stroke={ink} strokeWidth="2" />
-          <path d="M16 24h18M16 32h18M16 40h12" stroke="#7FA4D0" strokeWidth="2" strokeLinecap="round" />
-        </g>
-      );
-    case "teacup":
-      return (
-        <g stroke={ink} strokeWidth="2">
-          <path d="M6 16h28v12a12 12 0 0 1-12 12h-4a12 12 0 0 1-12-12z" fill="white" />
-          <path d="M34 20h6a7 7 0 0 1 0 14h-6" fill="none" />
-          <path d="M14 10c2-6 4 0 6-6" fill="none" strokeLinecap="round" />
-        </g>
-      );
-    case "ruler":
-      return (
-        <g>
-          <rect x="10" y="0" width="16" height="62" rx="3" fill="#F4E2A8" stroke={ink} strokeWidth="2" />
-          <path d="M10 10h8M10 20h5M10 30h8M10 40h5M10 50h8" stroke={ink} strokeWidth="1.6" />
-        </g>
-      );
-    case "cake":
-      return (
-        <g>
-          <path d="M8 28h40v16a8 8 0 0 1-8 8H16a8 8 0 0 1-8-8z" fill="#F4C2D0" />
-          <rect x="8" y="24" width="40" height="10" rx="4" fill="#FFF6F8" />
-          <rect x="26" y="8" width="4" height="16" rx="2" fill="#E7C56A" />
-          <circle cx="28" cy="8" r="4" fill="#F08A3C" />
-        </g>
-      );
-    case "drill":
-      return (
-        <g>
-          <rect x="4" y="16" width="28" height="18" rx="6" fill="#5C5348" />
-          <rect x="28" y="20" width="22" height="10" rx="3" fill="#D7D2CC" />
-          <polygon points="50,18 62,25 50,32" fill="#C9C3BC" />
-          <circle cx="14" cy="25" r="3" fill="#F2C14E" />
-        </g>
-      );
-    case "palette":
-      return (
-        <g>
-          <ellipse cx="28" cy="28" rx="26" ry="20" fill="#F7F1E6" stroke={ink} strokeWidth="2" />
-          <circle cx="18" cy="22" r="4" fill="#F08A3C" />
-          <circle cx="30" cy="16" r="4" fill="#7DB88A" />
-          <circle cx="40" cy="24" r="4" fill="#7C6BB8" />
-          <circle cx="34" cy="34" r="4" fill="#E07A8C" />
-          <path d="M44 8l10 28" stroke="#8D6A32" strokeWidth="3" strokeLinecap="round" />
-        </g>
-      );
-    case "bolt":
-      return <polygon points="22,0 8,26 20,26 14,48 36,18 22,18 30,0" fill={accent} stroke={ink} strokeWidth="1.8" strokeLinejoin="round" />;
-    case "mic":
-      return (
-        <g>
-          <rect x="14" y="0" width="16" height="28" rx="8" fill="#3A2A24" />
-          <path d="M10 20c0 12 8 18 14 18s14-6 14-18" fill="none" stroke="#3A2A24" strokeWidth="3" />
-          <path d="M22 38v14" stroke="#3A2A24" strokeWidth="3" strokeLinecap="round" />
-          <path d="M14 52h16" stroke="#C6A15A" strokeWidth="3" strokeLinecap="round" />
-        </g>
-      );
-    default:
-      return null;
-  }
-}
-
-function Portrait({ look }: { look: Look }) {
+function PortraitISTP() {
+  const skin = "#8D5A3C";
   return (
     <g>
-      <circle cx="140" cy="168" r="124" fill={look.bg} />
-      <ellipse cx="140" cy="314" rx="54" ry="8" fill={look.ink} opacity="0.08" />
-      <HairBack style={look.hairStyle} color={look.hair} />
-      <Arm x1={112} y1={204} x2={look.left[0]} y2={look.left[1]} color={look.cloth} skin={look.skin} />
-      <Arm x1={168} y1={204} x2={look.right[0]} y2={look.right[1]} color={look.cloth} skin={look.skin} />
-      <rect x="116" y="250" width="18" height="50" rx="9" fill={look.pants} />
-      <rect x="146" y="250" width="18" height="50" rx="9" fill={look.pants} />
-      <ellipse cx="125" cy="300" rx="16" ry="8" fill={look.shoe} />
-      <ellipse cx="155" cy="300" rx="16" ry="8" fill={look.shoe} />
-      <Outfit look={look} />
-      <g transform={`translate(${look.propAt[0]} ${look.propAt[1]}) rotate(${look.propRot ?? 0})`}>
-        <PropArt kind={look.prop} accent={look.accent} ink={look.ink} />
+      <Backdrop color="#FFF4D4" />
+      <Legs pants="#5C5348" shoe="#2C2824" />
+      <path d="M96 150c-10 36 2 72 20 76h48c18-4 30-40 20-76-14-12-74-12-88 0z" fill="#E0A020" />
+      <path d="M124 152h32v18h-32z" fill="#FFF8E8" />
+      <path d="M112 186h56v34c0 8-8 12-14 12h-28c-6 0-14-4-14-12z" fill="#C47E12" />
+      <Limb x1={112} y1={174} x2={86} y2={206} color="#E0A020" />
+      <Limb x1={172} y1={170} x2={214} y2={188} color="#E0A020" />
+      <g transform="translate(150 168) rotate(16)">
+        <rect x="0" y="8" width="46" height="28" rx="8" fill="#4A433C" />
+        <rect x="40" y="14" width="28" height="16" rx="4" fill="#D5D0C8" />
+        <polygon points="68,10 92,22 68,34" fill="#C9C3BC" />
+        <circle cx="16" cy="22" r="5" fill="#F2C14E" />
+        <path d="M8 8v-10M20 6V-2" stroke="#4A433C" strokeWidth="3" strokeLinecap="round" />
       </g>
-      <circle cx={look.left[0]} cy={look.left[1]} r={9} fill={look.skin} />
-      <circle cx={look.right[0]} cy={look.right[1]} r={9} fill={look.skin} />
-      <rect x="128" y="164" width="24" height="26" rx="10" fill={look.skin} />
-      <ellipse cx="92" cy="128" rx="8" ry="11" fill={look.skin} />
-      <ellipse cx="188" cy="128" rx="8" ry="11" fill={look.skin} />
-      <circle cx="140" cy="124" r="50" fill={look.skin} />
-      <Face look={look} />
-      <HairFront style={look.hairStyle} color={look.hair} accent={look.accent} />
-      <Hat look={look} />
-      <Glasses look={look} />
+      <Hand x={96} y={200} skin={skin} />
+      <Hand x={188} y={186} skin={skin} />
+      <Head cy={102} skin={skin} blush="#C47D68" mood="calm" />
+      <g fill="#241C18">
+        <path d="M98 100c2-34 18-48 42-48s40 14 42 48c-10-14-26-20-42-20s-32 6-42 20z" />
+        <ellipse cx="122" cy="62" rx="10" ry="14" />
+      </g>
+      <g>
+        <path d="M108 78h64" stroke="#241C18" strokeWidth="4" strokeLinecap="round" />
+        <circle cx="124" cy="78" r="11" fill="#D7F1F8" stroke={INK} strokeWidth="2.2" />
+        <circle cx="156" cy="78" r="11" fill="#D7F1F8" stroke={INK} strokeWidth="2.2" />
+        <path d="M135 78h10" stroke={INK} strokeWidth="2.2" />
+      </g>
     </g>
   );
 }
+
+function PortraitISFP() {
+  const skin = "#F6D7C0";
+  return (
+    <g>
+      <Backdrop color="#FFF6DC" />
+      <Legs pants="#C48A3A" shoe="#4A3A34" />
+      <path d="M98 152c-12 36 0 72 18 76h48c18-4 30-40 18-76-12-12-72-12-84 0z" fill="#F2C14E" />
+      <path d="M120 152h40l-8 16h-24z" fill="#FFF8EE" />
+      <Limb x1={110} y1={176} x2={72} y2={214} color="#F2C14E" />
+      <Limb x1={172} y1={174} x2={210} y2={196} color="#F2C14E" />
+      <g transform="translate(40 186) rotate(-12)">
+        <ellipse cx="28" cy="26" rx="30" ry="22" fill="#F7F1E6" stroke={INK} strokeWidth="2" />
+        <circle cx="40" cy="30" r="6" fill="#F7F1E6" stroke={INK} strokeWidth="2" />
+        <circle cx="16" cy="18" r="5" fill="#F08A3C" />
+        <circle cx="30" cy="14" r="5" fill="#7DB88A" />
+        <circle cx="40" cy="22" r="5" fill="#7C6BB8" />
+        <circle cx="28" cy="30" r="5" fill="#E07A8C" />
+      </g>
+      <Hand x={78} y={214} skin={skin} />
+      <path d="M206 150l16 46" stroke="#8D6A32" strokeWidth="4" strokeLinecap="round" />
+      <path d="M214 146l14 8-6 10z" fill="#E07A8C" />
+      <Hand x={206} y={196} skin={skin} />
+      <Head cy={104} skin={skin} blush="#F3B4B4" mood="soft" />
+      <g fill="#3D2C32">
+        <path d="M96 108c4-40 22-56 44-56s40 16 44 56c-12-16-28-22-44-22s-32 6-44 22z" />
+        <circle cx="108" cy="86" r="12" />
+        <circle cx="172" cy="86" r="12" />
+      </g>
+      <ellipse cx="150" cy="70" rx="34" ry="14" fill="#3D2C32" />
+      <circle cx="178" cy="66" r="5" fill="#E07A8C" />
+    </g>
+  );
+}
+
+function PortraitESTP() {
+  const skin = "#D3926A";
+  return (
+    <g>
+      <Backdrop color="#FFF3CC" />
+      <Legs pants="#4E463C" shoe="#2C2824" />
+      <path d="M92 148c-10 38 4 76 24 80h48c20-4 34-42 24-80-16-12-80-12-96 0z" fill="#E39A1A" />
+      <path d="M126 150h28v16h-28z" fill="#FFF6D8" />
+      <Limb x1={108} y1={174} x2={74} y2={214} color="#E39A1A" />
+      <Hand x={74} y={214} skin={skin} />
+      <Limb x1={174} y1={168} x2={200} y2={196} color="#E39A1A" />
+      <g transform="translate(168 176)">
+        <rect width="62" height="40" rx="8" fill="#2C3444" />
+        <rect x="8" y="-8" width="20" height="12" rx="3" fill="#3A4458" />
+        <circle cx="34" cy="22" r="13" fill="#8EC6E0" />
+        <circle cx="34" cy="22" r="6" fill="#243044" />
+        <circle cx="30" cy="18" r="3" fill="#fff" opacity="0.7" />
+      </g>
+      <Hand x={188} y={196} skin={skin} />
+      <Head cy={100} skin={skin} blush="#E89080" mood="grin" glasses="sun" />
+      <g fill="#2C211C">
+        <path d="M98 96c2-36 20-50 42-50s40 14 42 50c-10-14-26-20-42-20s-32 6-42 20z" />
+        <polygon points="140,46 154,78 126,78" />
+        <polygon points="108,62 126,84 98,92" />
+        <polygon points="176,60 186,92 156,82" />
+      </g>
+    </g>
+  );
+}
+
+function PortraitESFP() {
+  const skin = "#F0BE98";
+  return (
+    <g>
+      <Backdrop color="#FFF5D8" />
+      <rect x="116" y="228" width="18" height="58" rx="9" fill="#D4892A" />
+      <Limb x1={156} y1={236} x2={196} y2={268} color="#D4892A" width={16} />
+      <ellipse cx="125" cy="288" rx="16" ry="8" fill="#4A342C" />
+      <ellipse cx="198" cy="276" rx="16" ry="8" fill="#4A342C" />
+      <path d="M96 150c-12 34 0 70 20 74h48c20-4 32-40 20-74-14-12-74-12-88 0z" fill="#F0B429" />
+      <path d="M124 150h32v16h-32z" fill="#FFF8E4" />
+      <Limb x1={112} y1={168} x2={74} y2={112} color="#F0B429" />
+      <Limb x1={172} y1={168} x2={214} y2={118} color="#F0B429" />
+      <Maraca x={48} y={78} />
+      <Maraca x={198} y={72} flip />
+      <Hand x={74} y={112} skin={skin} />
+      <Hand x={210} y={116} skin={skin} />
+      <Head cy={102} skin={skin} blush="#F0A0B0" mood="grin" />
+      <g fill="#4E2C28">
+        <path d="M98 104c2-40 22-56 42-56s40 16 42 56c-12-16-26-22-42-22s-30 6-42 22z" />
+        <ellipse cx="196" cy="150" rx="14" ry="32" />
+        <circle cx="188" cy="112" r="8" fill="#FFE08A" />
+      </g>
+    </g>
+  );
+}
+
+function Maraca({ x, y, flip = false }: { x: number; y: number; flip?: boolean }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${flip ? -1 : 1} 1)`}>
+      <rect x="18" y="28" width="7" height="26" rx="3" fill="#C6A15A" />
+      <ellipse cx="21" cy="16" rx="16" ry="18" fill={flip ? "#F08A3C" : "#E25B5B"} />
+      <path d="M10 10h22M8 18h26" stroke="#FFF6D4" strokeWidth="2" strokeLinecap="round" />
+    </g>
+  );
+}
+
+const PORTRAITS: Record<TypeCode, () => ReactElement> = {
+  INTJ: PortraitINTJ,
+  INTP: PortraitINTP,
+  ENTJ: PortraitENTJ,
+  ENTP: PortraitENTP,
+  INFJ: PortraitINFJ,
+  INFP: PortraitINFP,
+  ENFJ: PortraitENFJ,
+  ENFP: PortraitENFP,
+  ISTJ: PortraitISTJ,
+  ISFJ: PortraitISFJ,
+  ESTJ: PortraitESTJ,
+  ESFJ: PortraitESFJ,
+  ISTP: PortraitISTP,
+  ISFP: PortraitISFP,
+  ESTP: PortraitESTP,
+  ESFP: PortraitESFP,
+};
 
 export function PersonaAvatar({
   code,
@@ -876,11 +675,11 @@ export function PersonaAvatar({
   className?: string;
   label?: string;
 }) {
-  const type = (code.slice(0, 4) in LOOKS ? code.slice(0, 4) : "ENFP") as TypeCode;
-  const look = LOOKS[type];
+  const type = (code.slice(0, 4) in PORTRAITS ? code.slice(0, 4) : "ENFP") as TypeCode;
+  const Draw = PORTRAITS[type];
   return (
-    <svg viewBox="0 0 280 330" className={cn("h-auto w-full", className)} role="img" aria-label={label ?? `${type} 的原创扁平画像`}>
-      <Portrait look={look} />
+    <svg viewBox="0 0 280 340" className={cn("h-auto w-full", className)} role="img" aria-label={label ?? `${type} 的原创扁平画像`}>
+      <Draw />
     </svg>
   );
 }
