@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { QUESTIONS } from "@/data/questions";
+import { nextButtonState } from "@/lib/quiz-nav";
 import { cn } from "cn";
 
 const CHOICES = [
@@ -49,6 +50,15 @@ export function Quiz({
 
   const answeredCount = answers.filter((item) => item != null).length;
   const progress = Math.round((answeredCount / QUESTIONS.length) * 100);
+  const nextButton = nextButtonState(index, QUESTIONS.length, answers[index] ?? null);
+
+  function clearPending() {
+    if (timer.current != null) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+    setLocked(false);
+  }
 
   function choose(value: number) {
     if (locked) return;
@@ -110,7 +120,21 @@ export function Quiz({
       progress={progress}
       indexLabel={`${index + 1} / ${QUESTIONS.length}`}
       onExit={onExit}
-      onBack={index > 0 ? onBack : undefined}
+      onBack={
+        index > 0
+          ? () => {
+              clearPending();
+              onBack();
+            }
+          : undefined
+      }
+      nextLabel={nextButton.label}
+      nextDisabled={!nextButton.enabled}
+      onNext={() => {
+        if (!nextButton.enabled) return;
+        clearPending();
+        onAdvance();
+      }}
     >
       <p className="sr-only" aria-live="polite">
         第 {index + 1} 题，共 {QUESTIONS.length} 题
@@ -162,12 +186,18 @@ function QuizFrame({
   indexLabel,
   onExit,
   onBack,
+  onNext,
+  nextLabel,
+  nextDisabled,
 }: {
   children: ReactNode;
   progress: number;
   indexLabel: string;
   onExit: () => void;
   onBack?: () => void;
+  onNext?: () => void;
+  nextLabel?: string;
+  nextDisabled?: boolean;
 }) {
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-xl flex-col gap-4 px-4 py-4">
@@ -177,7 +207,19 @@ function QuizFrame({
             {onBack ? "上一题" : "返回"}
           </Button>
           <span className="text-sm font-medium tabular-nums">{indexLabel}</span>
-          <span />
+          {onNext ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="justify-self-end px-2"
+              disabled={nextDisabled}
+              onClick={onNext}
+            >
+              {nextLabel}
+            </Button>
+          ) : (
+            <span />
+          )}
         </div>
         <Progress value={progress} aria-label="作答进度" className="h-2 bg-white" />
       </header>

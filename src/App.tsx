@@ -19,6 +19,7 @@ import {
   successToast,
 } from "@/lib/access";
 import { DEMO_CODE, synthesizeAnswers } from "@/lib/demo";
+import { answerQuestion, stepQuestion } from "@/lib/quiz-nav";
 import { scoreAnswers } from "@/lib/score";
 import { freshState, loadState, saveState, type SaveState } from "@/lib/storage";
 
@@ -272,20 +273,21 @@ export default function App() {
         answers={state.answers}
         index={state.index}
         onExit={() => update({ view: "home" })}
-        onBack={() => update((current) => ({ ...current, index: Math.max(0, current.index - 1) }))}
+        onBack={() =>
+          update((current) => ({ ...current, index: stepQuestion(current.index, QUESTIONS.length, -1).index }))
+        }
         onAnswer={(value) =>
-          update((current) => {
-            const answers = [...current.answers];
-            answers[current.index] = value;
-            return { ...current, answers, demo: false };
-          })
+          update((current) => ({
+            ...current,
+            answers: answerQuestion(current.answers, current.index, value),
+            demo: false,
+          }))
         }
         onAdvance={() =>
           update((current) => {
-            if (current.index >= QUESTIONS.length - 1) {
-              return { ...current, view: "result", demo: false };
-            }
-            return { ...current, index: current.index + 1 };
+            const step = stepQuestion(current.index, QUESTIONS.length, 1);
+            if (step.done) return { ...current, view: "result", demo: false };
+            return { ...current, index: step.index };
           })
         }
       />,
