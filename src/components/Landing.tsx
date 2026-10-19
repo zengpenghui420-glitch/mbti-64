@@ -1,8 +1,6 @@
-import { useState, type FormEvent } from "react";
 import { AvatarStage, PersonaAvatar } from "@/components/Avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { accessConfig } from "@/config";
 import { getProfile, TYPE_CODES } from "@/data/profiles";
 import { temperamentOf } from "@/data/temperament";
 
@@ -17,27 +15,12 @@ const SAMPLES = ["INTJ-AC", "ENFP-TC", "ISFJ-AH", "ESTP-TH", "INFJ-TC", "ENTP-AH
 export function Landing({
   onStart,
   onDemo,
-  gateOk,
-  onUnlock,
   resume,
 }: {
   onStart: () => void;
   onDemo: () => void;
-  gateOk: boolean;
-  onUnlock: (code: string) => boolean;
   resume: "new" | "partial" | "done";
 }) {
-  const [invite, setInvite] = useState("");
-  const [gateError, setGateError] = useState("");
-  const locked = accessConfig.gateEnabled && !gateOk;
-
-  function submitGate(event: FormEvent) {
-    event.preventDefault();
-    const ok = onUnlock(invite);
-    setGateError(ok ? "" : "这个邀请码还不能用。");
-    if (ok) onStart();
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-6 md:py-10">
       <header className="flex items-center justify-between gap-3">
@@ -60,29 +43,9 @@ export function Landing({
             十六种主类型之下，再用「坚定 / 敏感」和「协同 / 主见」往里看一层。
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:max-w-sm">
-            {locked ? (
-              <form onSubmit={submitGate} className="grid gap-2">
-                <label className="text-sm text-muted-foreground" htmlFor="invite">
-                  邀请码（当前为内测入口）
-                </label>
-                <input
-                  id="invite"
-                  value={invite}
-                  onChange={(event) => setInvite(event.target.value)}
-                  className="h-12 rounded-full border bg-white px-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-                  placeholder="输入邀请码"
-                  autoComplete="off"
-                />
-                {gateError ? <p className="text-sm text-destructive">{gateError}</p> : null}
-                <Button type="submit" variant="gold" size="xl">
-                  验证并开始
-                </Button>
-              </form>
-            ) : (
-<Button type="button" variant="gold" size="xl" onClick={onStart}>
-                  {resume === "done" ? "查看上次结果" : resume === "partial" ? "继续未完成的测试" : "开始测试"}
-                </Button>
-            )}
+            <Button type="button" variant="gold" size="xl" onClick={onStart}>
+              {resume === "done" ? "查看上次结果" : resume === "partial" ? "继续未完成的测试" : "开始测试"}
+            </Button>
             <Button type="button" variant="outline" size="xl" className="bg-white/80" onClick={onDemo}>
               示例结果
             </Button>

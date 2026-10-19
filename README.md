@@ -2,7 +2,7 @@
 
 手机优先的单页人格小测试。108 道 Likert 题覆盖能量（E/I）、关注（N/S）、判断（T/F）、节奏（J/P），以及两层后缀：坚定/敏感（A/T）、协同/主见（C/H）。16 种主类型 × 4 种后缀，答完立刻给出 64 型，并可以带走一千字以上的中文报告。
 
-这是娱乐向的自我观察，不是心理诊断，也不用于招聘。全程没有第二步收费。
+这是娱乐向的自我观察，不是心理诊断，也不用于招聘。
 
 ## 本地运行
 
@@ -62,15 +62,18 @@ gh api --method POST -H "Accept: application/vnd.github+json" \
 3. 打开 Actions 里的 **Deploy GitHub Pages**。如果第一次推送时 Pages 还没打开、工作流失败了，点 **Re-run jobs**。
 4. 成功后访问 <https://zengpenghui420-glitch.github.io/mbti-64/>，页面标题应为「64型人格测试」。
 
-## 可选邀请码
+## 验证码
 
-默认开放。若要改成邀请码入口，编辑 `src/config.ts`：
+从首页开始答题需要验证码。`#/demo` 和 `#/demo/类型` 只是示例预览，不消耗次数。直接打开 `#/quiz` 也会先检查这个标签页有没有验证通过，改地址不能跳过。
 
-```ts
-export const accessConfig = {
-  gateEnabled: true,
-  inviteCodes: ["OPEN-2026"],
-};
+次数记在 MantleDB：namespace `catquiz-zph420-codes`，集合 `mb`（和 cat 的 `c`、八字的 `bz` 不通用）。每个码 3 次，换设备、换浏览器都会接着扣。同一个标签页里验证通过之后，再点「重新测试」不会重复扣次。
+
+`?code=MBXXXX` 会自动验证并进入第一题。链接如果同时是 `#/demo` 预览，则不会扣次。
+
+新码用 `tools/mint.sh` 生成（前缀 `MB`，集合 `mb`）。写权限的 key 只放在环境变量里，不要提交到仓库：
+
+```bash
+MANTLE_KEY=... ./tools/mint.sh 10
 ```
 
 ## 计分

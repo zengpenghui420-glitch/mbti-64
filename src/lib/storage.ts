@@ -10,6 +10,7 @@ export interface SaveState {
   index: number;
   demo: boolean;
   nickname: string;
+  /** 旧存档字段。真正的解锁只看本标签页的 sessionStorage，不看这里。 */
   gateOk: boolean;
 }
 
