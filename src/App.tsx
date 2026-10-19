@@ -105,13 +105,12 @@ export default function App() {
 
   useEffect(() => {
     const hash = window.location.hash;
+    if (!unlocked && isQuizHash(hash)) return;
     if (state.view === "quiz" && unlocked) {
       if (!isQuizHash(hash)) replaceHash("#/quiz");
       return;
     }
-    if (!isQuizHash(hash)) return;
-    if (!unlocked && state.view === "home") return;
-    replaceHash(state.demo ? "#/demo" : "");
+    if (isQuizHash(hash)) replaceHash(state.demo ? "#/demo" : "");
   }, [state.view, state.demo, unlocked]);
 
   useEffect(() => {
@@ -236,6 +235,7 @@ export default function App() {
   }
 
   function showDemo() {
+    replaceHash("#/demo");
     update({
       view: "result",
       demo: true,
