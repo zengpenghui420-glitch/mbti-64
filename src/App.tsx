@@ -21,7 +21,7 @@ import {
 import { DEMO_CODE, synthesizeAnswers } from "@/lib/demo";
 import { answerQuestion, stepQuestion } from "@/lib/quiz-nav";
 import { scoreAnswers } from "@/lib/score";
-import { freshState, loadState, saveState, type SaveState } from "@/lib/storage";
+import { freshState, homeResume, isCompleteAttempt, loadState, retakeState, saveState, type SaveState } from "@/lib/storage";
 
 let bootedUrlGate = false;
 
@@ -44,6 +44,9 @@ function initialState(): SaveState {
     return { ...saved, view: demo.view, demo: true, answers: synthesizeAnswers(demo.code ?? DEMO_CODE) };
   }
   const unlocked = isSessionUnlocked();
+  if (isCompleteAttempt(saved)) {
+    return { ...saved, view: "home", demo: false };
+  }
   if (isQuizHash(window.location.hash) && unlocked) {
     return { ...saved, view: "quiz", demo: false };
   }
@@ -75,6 +78,21 @@ export default function App() {
         return;
       }
       if (!isQuizHash(hash)) return;
+      if (isCompleteAttempt(loadState())) {
+        if (!isSessionUnlocked()) {
+          setUnlocked(false);
+          setState((current) => ({ ...current, view: "home" }));
+          pendingRef.current = "retake";
+          setDialogError("");
+          setInitialCode(codeFromLocation());
+          setDialogOpen(true);
+          return;
+        }
+        setUnlocked(true);
+        setDialogOpen(false);
+        setState((current) => retakeState(current));
+        return;
+      }
       if (!isSessionUnlocked()) {
         setUnlocked(false);
         setState((current) => ({ ...current, view: "home" }));
@@ -106,13 +124,17 @@ export default function App() {
 
   useEffect(() => {
     const hash = window.location.hash;
+    if (state.view === "home" && isCompleteAttempt(state) && isQuizHash(hash)) {
+      replaceHash("");
+      return;
+    }
     if (!unlocked && isQuizHash(hash)) return;
     if (state.view === "quiz" && unlocked) {
       if (!isQuizHash(hash)) replaceHash("#/quiz");
       return;
     }
     if (isQuizHash(hash)) replaceHash(state.demo ? "#/demo" : "");
-  }, [state.view, state.demo, unlocked]);
+  }, [state, unlocked]);
 
   useEffect(() => {
     saveState({ ...state, view: gateQuizView(state.view, unlocked) });
@@ -149,12 +171,7 @@ export default function App() {
   }
 
   function beginRetake() {
-    update((current) => ({
-      ...freshState(),
-      view: "quiz",
-      gateOk: current.gateOk,
-      nickname: current.nickname,
-    }));
+    update((current) => retakeState(current));
   }
 
   function requestQuiz(action: "start" | "retake") {
@@ -216,6 +233,7 @@ export default function App() {
         return;
       }
       if (isQuizHash(hash) && !isSessionUnlocked()) {
+        if (isCompleteAttempt(loadState())) return;
         pendingRef.current = "start";
         setDialogError("");
         setDialogOpen(true);
@@ -341,7 +359,12 @@ export default function App() {
     );
   }
 
-  const answered = state.demo ? 0 : state.answers.filter((item) => item != null).length;
-  const resume = answered === 0 ? "new" : answered === state.answers.length ? "done" : "partial";
-  return shell(<Landing onStart={start} onDemo={showDemo} resume={resume} />);
+  return shell(
+    <Landing
+      onStart={start}
+      onRetake={() => requestQuiz("retake")}
+      onDemo={showDemo}
+      resume={homeResume(state.demo, state.answers)}
+    />,
+  );
 }

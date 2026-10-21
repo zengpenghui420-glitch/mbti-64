@@ -137,9 +137,9 @@ export function ResultView({
             {copied ? "已复制" : "复制结果"}
           </Button>
         </div>
-        <button type="button" className="py-1 text-sm text-muted-foreground underline-offset-4 hover:underline" onClick={onRetake}>
+        <Button type="button" variant="outline" size="xl" className="bg-white" onClick={onRetake}>
           重新测试
-        </button>
+        </Button>
       </div>
     </div>
   );

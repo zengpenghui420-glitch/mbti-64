@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { answerQuestion, nextButtonState, stepQuestion } from "@/lib/quiz-nav";
+import { freshState, homeResume, isCompleteAttempt, retakeState } from "@/lib/storage";
 
 describe("quiz navigation", () => {
   it("keeps later answers when an earlier one changes", () => {
@@ -20,5 +21,19 @@ describe("quiz navigation", () => {
     expect(nextButtonState(1, 108, 4)).toEqual({ label: "下一题", enabled: true });
     expect(nextButtonState(107, 108, null)).toEqual({ label: "查看结果", enabled: false });
     expect(nextButtonState(107, 108, 2)).toEqual({ label: "查看结果", enabled: true });
+  });
+
+  it("starts a retake from a blank quiz instead of the saved result", () => {
+    const finished = freshState();
+    finished.view = "result";
+    finished.nickname = "小周";
+    finished.answers = finished.answers.map(() => 4);
+    expect(isCompleteAttempt(finished)).toBe(true);
+    expect(homeResume(false, finished.answers)).toBe("done");
+    const again = retakeState(finished);
+    expect(again.view).toBe("quiz");
+    expect(again.answers.every((item) => item == null)).toBe(true);
+    expect(again.nickname).toBe("小周");
+    expect(homeResume(true, finished.answers)).toBe("new");
   });
 });

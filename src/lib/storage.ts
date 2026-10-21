@@ -25,6 +25,30 @@ export function freshState(): SaveState {
   };
 }
 
+/** A new attempt. Drops saved answers so the next run cannot fall back into the previous result. */
+export function retakeState(current: Pick<SaveState, "gateOk" | "nickname">): SaveState {
+  return {
+    ...freshState(),
+    view: "quiz",
+    gateOk: current.gateOk,
+    nickname: current.nickname,
+  };
+}
+
+export type HomeResume = "new" | "partial" | "done";
+
+export function homeResume(demo: boolean, answers: Array<number | null>): HomeResume {
+  if (demo) return "new";
+  const answered = answers.filter((item) => item != null).length;
+  if (answered === 0) return "new";
+  if (answered === answers.length) return "done";
+  return "partial";
+}
+
+export function isCompleteAttempt(state: Pick<SaveState, "demo" | "answers">): boolean {
+  return !state.demo && state.answers.length > 0 && state.answers.every((item) => item != null);
+}
+
 function isAnswer(value: unknown): value is number | null {
   return value == null || (typeof value === "number" && value >= 1 && value <= 5);
 }

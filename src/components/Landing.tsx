@@ -14,10 +14,12 @@ const SAMPLES = ["INTJ-AC", "ENFP-TC", "ISFJ-AH", "ESTP-TH", "INFJ-TC", "ENTP-AH
 
 export function Landing({
   onStart,
+  onRetake,
   onDemo,
   resume,
 }: {
   onStart: () => void;
+  onRetake: () => void;
   onDemo: () => void;
   resume: "new" | "partial" | "done";
 }) {
@@ -46,6 +48,11 @@ export function Landing({
             <Button type="button" variant="gold" size="xl" onClick={onStart}>
               {resume === "done" ? "查看上次结果" : resume === "partial" ? "继续未完成的测试" : "开始测试"}
             </Button>
+            {resume === "done" ? (
+              <Button type="button" variant="outline" size="xl" className="bg-white/80" onClick={onRetake}>
+                重新测试
+              </Button>
+            ) : null}
             <Button type="button" variant="outline" size="xl" className="bg-white/80" onClick={onDemo}>
               示例结果
             </Button>
