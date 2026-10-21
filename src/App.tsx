@@ -9,12 +9,12 @@ import { QUESTIONS } from "@/data/questions";
 import {
   gateQuizView,
   isQuizHash,
-  isSessionUnlocked,
-  markSessionUnlocked,
   normalizeCode,
   parseDemoHash,
   redeemCode,
   redeemErrorText,
+  rememberCode,
+  rememberedCode,
   shouldAutoRedeem,
   successToast,
 } from "@/lib/access";
@@ -43,25 +43,26 @@ function initialState(): SaveState {
   if (demo) {
     return { ...saved, view: demo.view, demo: true, answers: synthesizeAnswers(demo.code ?? DEMO_CODE) };
   }
-  const unlocked = isSessionUnlocked();
   if (isCompleteAttempt(saved)) {
     return { ...saved, view: "home", demo: false };
   }
-  if (isQuizHash(window.location.hash) && unlocked) {
-    return { ...saved, view: "quiz", demo: false };
-  }
-  return { ...saved, view: gateQuizView(saved.view, unlocked) };
+  return { ...saved, view: gateQuizView(saved.view, false) };
 }
 
 export default function App() {
   const [state, setState] = useState<SaveState>(initialState);
-  const [unlocked, setUnlocked] = useState(isSessionUnlocked);
+  const [unlocked, setUnlocked] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogBusy, setDialogBusy] = useState(false);
   const [dialogError, setDialogError] = useState("");
-  const [initialCode, setInitialCode] = useState(codeFromLocation);
+  const [initialCode, setInitialCode] = useState(() => codeFromLocation() || rememberedCode());
   const [toast, setToast] = useState("");
   const pendingRef = useRef<"start" | "retake">("start");
+  const viewRef = useRef(state.view);
+  const paidRef = useRef(false);
+  const busyRef = useRef(false);
+  const requestRef = useRef<(action: "start" | "retake") => void>(() => {});
+  const confirmRef = useRef<(raw: string, locked?: boolean) => void>(() => {});
 
   useEffect(() => {
     function onHash() {
@@ -78,45 +79,9 @@ export default function App() {
         return;
       }
       if (!isQuizHash(hash)) return;
-      if (isCompleteAttempt(loadState())) {
-        if (!isSessionUnlocked()) {
-          setUnlocked(false);
-          setState((current) => ({ ...current, view: "home" }));
-          pendingRef.current = "retake";
-          setDialogError("");
-          setInitialCode(codeFromLocation());
-          setDialogOpen(true);
-          return;
-        }
-        setUnlocked(true);
-        setDialogOpen(false);
-        setState((current) => retakeState(current));
-        return;
-      }
-      if (!isSessionUnlocked()) {
-        setUnlocked(false);
-        setState((current) => ({ ...current, view: "home" }));
-        pendingRef.current = "start";
-        setDialogError("");
-        setInitialCode(codeFromLocation());
-        setDialogOpen(true);
-        return;
-      }
-      setUnlocked(true);
-      setDialogOpen(false);
-      setState((current) => {
-        if (current.view === "quiz" && !current.demo) return current;
-        if (current.demo) {
-          return { ...freshState(), view: "quiz", gateOk: current.gateOk, nickname: current.nickname };
-        }
-        const firstEmpty = current.answers.findIndex((item) => item == null);
-        return {
-          ...current,
-          view: "quiz",
-          demo: false,
-          index: firstEmpty === -1 ? 0 : firstEmpty,
-        };
-      });
+      if (viewRef.current === "quiz" && paidRef.current) return;
+      const saved = loadState();
+      requestRef.current(isCompleteAttempt(saved) ? "retake" : "start");
     }
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -175,34 +140,43 @@ export default function App() {
   }
 
   function requestQuiz(action: "start" | "retake") {
+    if (busyRef.current) return;
     pendingRef.current = action;
-    if (isSessionUnlocked()) {
-      setUnlocked(true);
-      if (action === "retake") beginRetake();
-      else beginStart();
-      return;
-    }
+    const code = codeFromLocation() || rememberedCode();
     setDialogError("");
-    setInitialCode(codeFromLocation());
+    setInitialCode(code);
     setDialogOpen(true);
+    if (code) {
+      busyRef.current = true;
+      void confirmCode(code, true);
+    }
   }
 
-  async function confirmCode(raw: string) {
+  async function confirmCode(raw: string, locked = false) {
     const code = normalizeCode(raw);
     if (!code) {
+      busyRef.current = false;
+      setDialogBusy(false);
       setDialogError(redeemErrorText("empty"));
+      setDialogOpen(true);
       return;
+    }
+    if (!locked) {
+      if (busyRef.current) return;
+      busyRef.current = true;
     }
     setDialogBusy(true);
     setDialogError("");
     const redeemed = await redeemCode(code);
+    busyRef.current = false;
     setDialogBusy(false);
     if (!redeemed.ok) {
       setDialogError(redeemErrorText(redeemed.reason));
       setDialogOpen(true);
       return;
     }
-    markSessionUnlocked(code);
+    rememberCode(code);
+    paidRef.current = true;
     setUnlocked(true);
     setDialogOpen(false);
     setToast(successToast(redeemed.remaining));
@@ -210,9 +184,10 @@ export default function App() {
     else beginStart();
   }
 
-  const confirmRef = useRef(confirmCode);
   useEffect(() => {
+    viewRef.current = state.view;
     confirmRef.current = confirmCode;
+    requestRef.current = requestQuiz;
   });
 
   useEffect(() => {
@@ -223,18 +198,20 @@ export default function App() {
       const hash = window.location.hash;
       const search = window.location.search;
       if (parseDemoHash(hash)) return;
-      if (shouldAutoRedeem(hash, search, isSessionUnlocked())) {
+      if (shouldAutoRedeem(hash, search)) {
         const saved = loadState();
-        pendingRef.current = saved.answers.every((item) => item != null) ? "retake" : "start";
+        pendingRef.current = isCompleteAttempt(saved) ? "retake" : "start";
         const code = codeFromLocation();
         setInitialCode(code);
         setDialogOpen(true);
-        void confirmRef.current(code);
+        busyRef.current = true;
+        void confirmRef.current(code, true);
         return;
       }
-      if (isQuizHash(hash) && !isSessionUnlocked()) {
-        if (isCompleteAttempt(loadState())) return;
-        pendingRef.current = "start";
+      if (isQuizHash(hash)) {
+        const saved = loadState();
+        pendingRef.current = isCompleteAttempt(saved) ? "retake" : "start";
+        setInitialCode(codeFromLocation() || rememberedCode());
         setDialogError("");
         setDialogOpen(true);
       }

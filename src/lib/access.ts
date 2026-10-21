@@ -15,18 +15,19 @@ export function normalizeCode(value: string): string {
   return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-export function isSessionUnlocked(): boolean {
+/** Last code typed in this tab. Remembering it does not grant another attempt. */
+export function rememberedCode(): string {
   try {
-    return sessionStorage.getItem(UNLOCK_KEY) === "1";
+    return normalizeCode(sessionStorage.getItem(CODE_KEY) ?? "");
   } catch {
-    return false;
+    return "";
   }
 }
 
-export function markSessionUnlocked(code: string): void {
+export function rememberCode(code: string): void {
   try {
-    sessionStorage.setItem(UNLOCK_KEY, "1");
-    sessionStorage.setItem(CODE_KEY, code);
+    sessionStorage.removeItem(UNLOCK_KEY);
+    sessionStorage.setItem(CODE_KEY, normalizeCode(code));
   } catch {
     /* 隐私模式写不进时，这一页仍可继续答。 */
   }
@@ -91,15 +92,15 @@ export function isQuizHash(hash: string): boolean {
   return path === "/quiz" || path.startsWith("/quiz/");
 }
 
-/** A saved or requested quiz view stays closed until this tab has redeemed a code. */
+/** A saved quiz stays closed until this page load has redeemed a use. */
 export function gateQuizView<T extends string>(view: T, unlocked: boolean): T | "home" {
   if (view === "quiz" && !unlocked) return "home";
   return view;
 }
 
-/** `?code=` auto-redeems only for a real start, never on a demo preview, and never twice in one tab. */
-export function shouldAutoRedeem(hash: string, search: string, unlocked: boolean): boolean {
-  if (unlocked || parseDemoHash(hash)) return false;
+/** `?code=` spends one use on a real start. A demo preview never spends a use. */
+export function shouldAutoRedeem(hash: string, search: string): boolean {
+  if (parseDemoHash(hash)) return false;
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   return normalizeCode(params.get("code") ?? "").length > 0;
 }

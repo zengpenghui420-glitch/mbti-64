@@ -66,7 +66,7 @@ gh api --method POST -H "Accept: application/vnd.github+json" \
 
 从首页开始答题需要验证码。`#/demo` 和 `#/demo/类型` 只是示例预览，不消耗次数。直接打开 `#/quiz` 也会先检查这个标签页有没有验证通过，改地址不能跳过。
 
-次数记在 MantleDB：namespace `catquiz-zph420-codes`，集合 `mb`（和 cat 的 `c`、八字的 `bz` 不通用）。每个码 3 次，换设备、换浏览器都会接着扣。同一个标签页里验证通过之后，再点「重新测试」不会重复扣次。
+次数记在 MantleDB：namespace `catquiz-zph420-codes`，集合 `mb`（和 cat 的 `c`、八字的 `bz` 不通用）。每个码 3 次。开始答题、继续未完成的测试、重新测试，每一次进入都扣 1 次。查看上次结果不扣次。次数用尽后要换一个码，不能靠同一个标签页反复重测。
 
 `?code=MBXXXX` 会自动验证并进入第一题。链接如果同时是 `#/demo` 预览，则不会扣次。
 

@@ -85,9 +85,9 @@ describe("access codes", () => {
     expect(gateQuizView("quiz", false)).toBe("home");
     expect(gateQuizView("quiz", true)).toBe("quiz");
     expect(gateQuizView("result", false)).toBe("result");
-    expect(shouldAutoRedeem("#/demo/ENFP-TC", "?code=MBCMQF", false)).toBe(false);
-    expect(shouldAutoRedeem("#/quiz", "?code=MBCMQF", false)).toBe(true);
-    expect(shouldAutoRedeem("", "?code=MBCMQF", true)).toBe(false);
-    expect(shouldAutoRedeem("", "", false)).toBe(false);
+    expect(shouldAutoRedeem("#/demo/ENFP-TC", "?code=MBCMQF")).toBe(false);
+    expect(shouldAutoRedeem("#/quiz", "?code=MBCMQF")).toBe(true);
+    expect(shouldAutoRedeem("", "?code=MBCMQF")).toBe(true);
+    expect(shouldAutoRedeem("", "")).toBe(false);
   });
 });
