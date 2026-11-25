@@ -62,13 +62,19 @@ gh api --method POST -H "Accept: application/vnd.github+json" \
 3. 打开 Actions 里的 **Deploy GitHub Pages**。如果第一次推送时 Pages 还没打开、工作流失败了，点 **Re-run jobs**。
 4. 成功后访问 <https://zengpenghui420-glitch.github.io/mbti-64/>，页面标题应为「64型人格测试」。
 
-## 验证码
+## 订单号
 
-从首页开始答题需要验证码。`#/demo` 和 `#/demo/类型` 只是示例预览，不消耗次数。直接打开 `#/quiz` 也会先检查这个标签页有没有验证通过，改地址不能跳过。
+从首页开始答题需要小红书订单号。到「我的订单」里复制。每个订单号可以测 3 次，只绑定本测试。
 
-次数记在 MantleDB：namespace `catquiz-zph420-codes`，集合 `mb`（和 cat 的 `c`、八字的 `bz` 不通用）。每个码 3 次。开始答题、继续未完成的测试、重新测试，每一次进入都扣 1 次。查看上次结果不扣次。次数用尽后要换一个码，不能靠同一个标签页反复重测。
+接口基址是 `https://snappy-tundra-7uesdvk-zengpenghui420-glitch.vercel.app`，quiz 键是 `mbti`。提交走 `POST /order/redeem`，body 是 `{ "quiz", "orderId" }`。刷新核对走 `GET /order/get?quiz=&orderId=`，只读，不扣次、不绑定。
 
-`?code=MBXXXX` 会自动验证并进入第一题。链接如果同时是 `#/demo` 预览，则不会扣次。
+- 第一次开始答题会核销 1 次。同一标签页里刷新后，继续这次还没做完的题不再核销。
+- 查看上次结果、示例结果（`#/demo`、`#/demo/类型`）不核销。直接打开 `#/quiz` 不能绕过。
+- 「重新测试」再核销 1 次。第 4 次拒绝。
+
+`?code=` 会自动核销并进入第一题。链接如果同时是 `#/demo` 预览，则不会扣次。
+
+不是订单号的输入仍走本仓原来的 Mantle 集合 `mb`（namespace `catquiz-zph420-codes`，和 cat 的 `c`、八字的 `bz` 不通用），不改走 `/redeem`。页面上不提示这条路径。对这类输入，开始、继续未完成、重新测试仍是每次进入扣 1 次；查看上次结果和示例不扣。
 
 新码用 `tools/mint.sh` 生成（前缀 `MB`，集合 `mb`）。写权限的 key 只放在环境变量里，不要提交到仓库：
 
