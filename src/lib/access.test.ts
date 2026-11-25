@@ -1,13 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  chargeForEntry,
   gateQuizView,
   isQuizHash,
+  markOrderResult,
   normalizeCode,
   parseDemoHash,
+  planOrderRefresh,
+  readAccessSession,
   redeemCode,
   redeemErrorText,
+  rememberCode,
+  rememberOrder,
   shouldAutoRedeem,
   successToast,
+  type AccessSession,
 } from "@/lib/access";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -70,9 +77,28 @@ describe("access codes", () => {
     };
     expect(await redeemCode("MBCMQF", fetchImpl)).toEqual({ ok: false, reason: "network" });
     expect(redeemErrorText("network")).toContain("网络");
-    expect(redeemErrorText("invalid")).toContain("不正确");
+    expect(redeemErrorText("invalid")).toContain("不对");
+    expect(redeemErrorText("empty")).toContain("订单号");
     expect(successToast(2)).toContain("2");
     expect(successToast(0)).toContain("最后一次");
+    expect(successToast(0)).not.toContain("本码");
+  });
+
+  it("keeps a non-order code on Mantle and off the order API", async () => {
+    const urls: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = String(input);
+      urls.push(url);
+      if (url.includes("/increment/")) {
+        expect(String(init?.body)).toBe(JSON.stringify({ key: "remaining", by: -1 }));
+        return jsonResponse({ remaining: 2, max: 3 });
+      }
+      return jsonResponse({ remaining: 3, max: 3 });
+    };
+    expect(await redeemCode("mbcmqf", fetchImpl)).toEqual({ ok: true, remaining: 2 });
+    expect(urls.length).toBeGreaterThan(0);
+    expect(urls.every((url) => url.startsWith("https://mantledb.sh/v2/") && url.includes("/mb/"))).toBe(true);
+    expect(urls.some((url) => url.includes("/order/") || url.includes("vercel.app") || url.includes("/redeem"))).toBe(false);
   });
 
   it("keeps demo previews open and locks the quiz route", () => {
@@ -89,5 +115,47 @@ describe("access codes", () => {
     expect(shouldAutoRedeem("#/quiz", "?code=MBCMQF")).toBe(true);
     expect(shouldAutoRedeem("", "?code=MBCMQF")).toBe(true);
     expect(shouldAutoRedeem("", "")).toBe(false);
+    const orderSession: AccessSession = { kind: "order", phase: "result", id: "P246801357924680135" };
+    expect(shouldAutoRedeem("", "?code=P246801357924680135", orderSession)).toBe(false);
+    expect(shouldAutoRedeem("#/quiz", "?code=P246801357924680135", { ...orderSession, phase: "running" })).toBe(false);
+  });
+
+  it("does not charge a demo, a saved result, or an in-progress order refresh", () => {
+    const fresh: AccessSession = { kind: "", phase: "", id: "" };
+    const running: AccessSession = { kind: "order", phase: "running", id: "P246801357924680135" };
+    const done: AccessSession = { kind: "order", phase: "result", id: "P246801357924680135" };
+    const code: AccessSession = { kind: "code", phase: "", id: "MBCMQF" };
+    expect(chargeForEntry("demo", fresh)).toBe(false);
+    expect(chargeForEntry("result", done)).toBe(false);
+    expect(chargeForEntry("start", running)).toBe(false);
+    expect(chargeForEntry("retake", running)).toBe(true);
+    expect(chargeForEntry("retake", done)).toBe(true);
+    expect(chargeForEntry("start", fresh)).toBe(true);
+    expect(chargeForEntry("start", code)).toBe(true);
+    expect(planOrderRefresh(done, "#/quiz", true)).toBe("peek-result");
+    expect(planOrderRefresh(running, "#/quiz", false)).toBe("resume-quiz");
+    expect(planOrderRefresh(running, "", false)).toBe("leave");
+    expect(planOrderRefresh(running, "#/quiz", true)).toBe("leave");
+    expect(planOrderRefresh(code, "#/quiz", false)).toBeNull();
+  });
+
+  it("remembers an order attempt separately from a Mantle code", () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+    });
+    rememberOrder("P246801357924680135");
+    expect(readAccessSession()).toEqual({ kind: "order", phase: "running", id: "P246801357924680135" });
+    markOrderResult();
+    expect(readAccessSession().phase).toBe("result");
+    rememberCode("mbcmqf");
+    expect(readAccessSession()).toEqual({ kind: "", phase: "", id: "MBCMQF" });
+    vi.unstubAllGlobals();
   });
 });

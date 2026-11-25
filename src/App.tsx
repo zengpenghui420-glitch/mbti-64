@@ -7,17 +7,23 @@ import { ResultView } from "@/components/ResultView";
 import { Button } from "@/components/ui/button";
 import { QUESTIONS } from "@/data/questions";
 import {
+  chargeForEntry,
   gateQuizView,
   isQuizHash,
+  markOrderResult,
   normalizeCode,
   parseDemoHash,
+  planOrderRefresh,
+  readAccessSession,
   redeemCode,
   redeemErrorText,
   rememberCode,
   rememberedCode,
+  rememberOrder,
   shouldAutoRedeem,
   successToast,
 } from "@/lib/access";
+import { classifyInput, orderFailText, orderFormatError, orderSuccessText, peekOrder, redeemOrder } from "@/lib/order";
 import { DEMO_CODE, synthesizeAnswers } from "@/lib/demo";
 import { answerQuestion, stepQuestion } from "@/lib/quiz-nav";
 import { scoreAnswers } from "@/lib/score";
@@ -63,6 +69,7 @@ export default function App() {
   const busyRef = useRef(false);
   const requestRef = useRef<(action: "start" | "retake") => void>(() => {});
   const confirmRef = useRef<(raw: string, locked?: boolean) => void>(() => {});
+  const resumeRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     function onHash() {
@@ -106,6 +113,10 @@ export default function App() {
   }, [state, unlocked]);
 
   useEffect(() => {
+    if ((state.view === "result" || state.view === "report") && !state.demo) markOrderResult();
+  }, [state.view, state.demo]);
+
+  useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(""), 4200);
     return () => window.clearTimeout(timer);
@@ -142,22 +153,37 @@ export default function App() {
   function requestQuiz(action: "start" | "retake") {
     if (busyRef.current) return;
     pendingRef.current = action;
-    const code = codeFromLocation() || rememberedCode();
+    const session = readAccessSession();
+    if (!chargeForEntry(action, session)) {
+      paidRef.current = true;
+      setUnlocked(true);
+      setDialogOpen(false);
+      beginStart();
+      return;
+    }
+    const code = action === "retake" && session.kind === "order" && session.id ? session.id : codeFromLocation() || rememberedCode();
     setDialogError("");
     setInitialCode(code);
     setDialogOpen(true);
     if (code) {
       busyRef.current = true;
-      void confirmCode(code, true);
+      void confirmAccess(code, true);
     }
   }
 
-  async function confirmCode(raw: string, locked = false) {
-    const code = normalizeCode(raw);
-    if (!code) {
+  async function confirmAccess(raw: string, locked = false) {
+    const cls = classifyInput(raw);
+    if (cls.type === "empty") {
       busyRef.current = false;
       setDialogBusy(false);
       setDialogError(redeemErrorText("empty"));
+      setDialogOpen(true);
+      return;
+    }
+    if (cls.type === "order-invalid" || (cls.type === "order" && orderFormatError(cls.orderId))) {
+      busyRef.current = false;
+      setDialogBusy(false);
+      setDialogError(orderFailText({ error: "invalid" }));
       setDialogOpen(true);
       return;
     }
@@ -167,27 +193,48 @@ export default function App() {
     }
     setDialogBusy(true);
     setDialogError("");
-    const redeemed = await redeemCode(code);
-    busyRef.current = false;
-    setDialogBusy(false);
-    if (!redeemed.ok) {
-      setDialogError(redeemErrorText(redeemed.reason));
+    try {
+      if (cls.type === "order") {
+        const redeemed = await redeemOrder(cls.orderId);
+        if (!redeemed.ok) {
+          setDialogError(orderFailText(redeemed));
+          setDialogOpen(true);
+          return;
+        }
+        rememberOrder(cls.orderId);
+        paidRef.current = true;
+        setUnlocked(true);
+        setDialogOpen(false);
+        setToast(orderSuccessText(redeemed));
+      } else {
+        const redeemed = await redeemCode(cls.code);
+        if (!redeemed.ok) {
+          setDialogError(redeemErrorText(redeemed.reason));
+          setDialogOpen(true);
+          return;
+        }
+        rememberCode(cls.code);
+        paidRef.current = true;
+        setUnlocked(true);
+        setDialogOpen(false);
+        setToast(successToast(redeemed.remaining));
+      }
+      if (pendingRef.current === "retake") beginRetake();
+      else beginStart();
+    } catch {
+      setDialogError(cls.type === "order" ? orderFailText(null) : redeemErrorText("network"));
       setDialogOpen(true);
-      return;
+    } finally {
+      busyRef.current = false;
+      setDialogBusy(false);
     }
-    rememberCode(code);
-    paidRef.current = true;
-    setUnlocked(true);
-    setDialogOpen(false);
-    setToast(successToast(redeemed.remaining));
-    if (pendingRef.current === "retake") beginRetake();
-    else beginStart();
   }
 
   useEffect(() => {
     viewRef.current = state.view;
-    confirmRef.current = confirmCode;
+    confirmRef.current = confirmAccess;
     requestRef.current = requestQuiz;
+    resumeRef.current = beginStart;
   });
 
   useEffect(() => {
@@ -198,8 +245,22 @@ export default function App() {
       const hash = window.location.hash;
       const search = window.location.search;
       if (parseDemoHash(hash)) return;
-      if (shouldAutoRedeem(hash, search)) {
-        const saved = loadState();
+      const session = readAccessSession();
+      const saved = loadState();
+      const refresh = planOrderRefresh(session, hash, isCompleteAttempt(saved));
+      if (refresh === "peek-result") {
+        if (/^P\d{18}$/.test(session.id)) void peekOrder(session.id).catch(() => undefined);
+        return;
+      }
+      if (refresh === "resume-quiz") {
+        paidRef.current = true;
+        setUnlocked(true);
+        pendingRef.current = "start";
+        resumeRef.current();
+        return;
+      }
+      if (refresh === "leave") return;
+      if (shouldAutoRedeem(hash, search, session)) {
         pendingRef.current = isCompleteAttempt(saved) ? "retake" : "start";
         const code = codeFromLocation();
         setInitialCode(code);
@@ -252,7 +313,7 @@ export default function App() {
             error={dialogError}
             initialCode={initialCode}
             onClose={() => setDialogOpen(false)}
-            onSubmit={(code) => void confirmCode(code)}
+            onSubmit={(code) => void confirmAccess(code)}
           />
         ) : null}
         <AccessToast message={toast} />

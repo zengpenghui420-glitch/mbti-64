@@ -40,14 +40,19 @@ export function AccessDialog({
       >
         <div className="flex items-start justify-between gap-3">
           <h2 id="access-title" className="text-xl font-semibold">
-            输入验证码
+            输入订单号
           </h2>
           <button type="button" className="text-sm text-muted-foreground" onClick={onClose}>
             关闭
           </button>
         </div>
+        <p className="mt-3 text-center text-sm leading-6 text-muted-foreground">
+          到小红书「我的订单」复制订单号贴过来
+          <br />
+          每个订单号可以测 3 次
+        </p>
         <label className="mt-4 grid gap-2 text-sm" htmlFor="access-code">
-          <span className="text-muted-foreground">验证码</span>
+          <span className="text-muted-foreground">订单号</span>
           <input
             id="access-code"
             value={code}
@@ -55,10 +60,11 @@ export function AccessDialog({
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck={false}
-            maxLength={16}
+            maxLength={120}
+            inputMode="text"
             onChange={(event) => setCode(event.target.value)}
-            className="h-12 rounded-full border bg-white px-4 text-base tracking-widest outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-            placeholder="MB····"
+            className="h-12 rounded-full border bg-white px-4 text-base tracking-normal outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+            placeholder="订单号"
           />
         </label>
         {error ? (
