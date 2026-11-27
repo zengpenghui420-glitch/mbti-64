@@ -1,185 +1,155 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { chargeForEntry, planOrderRefresh, type AccessSession } from "@/lib/access";
 import {
-  API_BASE,
-  QUIZ_KEY,
+  ORDER_USES_KEY,
   classifyInput,
-  decideTimeout,
   normalizeOrderId,
   orderFailText,
   orderFormatError,
   orderSuccessText,
-  peekOrder,
-  redeemOrder,
+  shownOrderUses,
+  submitOrderId,
 } from "@/lib/order";
 
 const ORDER = "P246801357924680135";
+const OTHER = "P847291038475610293";
+const REPEAT = "P111111111111111111";
+const BLOCK = "P121212121212121212";
+const SEQUENCE = "P123456789012345678";
+const SEQUENCE_DOWN = "P987654321098765432";
+const P19 = "P9900000000000001378";
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+function installStorage() {
+  const store = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, String(value));
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => store.clear(),
+  });
+  return store;
 }
 
 afterEach(() => {
-  delete (globalThis as { __ORDER_RECONCILE_MS?: number }).__ORDER_RECONCILE_MS;
-  delete (globalThis as { __ORDER_TIMEOUT_MS?: number }).__ORDER_TIMEOUT_MS;
+  vi.unstubAllGlobals();
 });
 
 describe("order ids", () => {
-  it("uses the mbti quiz key and the production API", () => {
-    expect(QUIZ_KEY).toBe("mbti");
-    expect(QUIZ_KEY).not.toBe("mbti-codes");
-    expect(API_BASE).toBe("https://snappy-tundra-7uesdvk-zengpenghui420-glitch.vercel.app");
-    expect(API_BASE.endsWith("/")).toBe(false);
+  it("keeps this quiz's display key off the soft-persimmon key", () => {
+    expect(ORDER_USES_KEY).toBe("mbti64_order_uses");
+    expect(ORDER_USES_KEY).not.toBe("soft_persimmon_order_uses");
   });
 
   it("normalizes a pasted order id and rejects lookalikes", () => {
     expect(normalizeOrderId(" 「p24 680135-7924.680135」 ")).toBe(ORDER);
     expect(normalizeOrderId("ｐ２４６８０１３５７９２４６８０１３５")).toBe(ORDER);
     expect(orderFormatError(ORDER)).toBe("");
-    expect(orderFormatError("P111111111111111111")).toBe("invalid");
-    expect(orderFormatError("P121212121212121212")).toBe("invalid");
-    expect(orderFormatError("P123456789012345678")).toBe("invalid");
+    expect(orderFormatError(OTHER)).toBe("");
+    expect(orderFormatError(REPEAT)).toBe("invalid");
+    expect(orderFormatError(BLOCK)).toBe("invalid");
+    expect(orderFormatError(SEQUENCE)).toBe("invalid");
+    expect(orderFormatError(SEQUENCE_DOWN)).toBe("invalid");
+    expect(orderFormatError(P19)).toBe("invalid");
     expect(orderFormatError("P123")).toBe("invalid");
     expect(classifyInput(`  ${ORDER}  `)).toEqual({ type: "order", orderId: ORDER });
-    expect(classifyInput("P123456789012345678")).toEqual({ type: "order", orderId: "P123456789012345678" });
+    expect(classifyInput(SEQUENCE)).toEqual({ type: "order", orderId: SEQUENCE });
+    expect(classifyInput(P19)).toEqual({ type: "order-invalid" });
     expect(classifyInput("P1234567890")).toEqual({ type: "order-invalid" });
     expect(classifyInput("mb cmqf")).toEqual({ type: "code", code: "MBCMQF" });
     expect(classifyInput("")).toEqual({ type: "empty" });
   });
 
-  it("does not mention a paid flag in the buyer copy", () => {
-    expect(orderSuccessText({ remaining: 2, paidVerified: false } as { remaining: number })).toBe(
-      "验证成功，还可以测 2 次",
-    );
-    expect(orderSuccessText({ remaining: 0 })).toBe("验证成功，这是最后一次");
-    expect(orderFailText({ error: "exhausted" })).toContain("3");
-    expect(orderFailText({ error: "bound_other_quiz" })).toContain("别的测试");
+  it("uses the display copy and never the blocked order errors", () => {
+    expect(orderSuccessText({ uses: 1, remaining: 2 })).toBe("验证成功，还可以测 2 次");
+    expect(orderSuccessText({ uses: 2, remaining: 1 })).toBe("验证成功，还可以测 1 次");
+    expect(orderSuccessText({ uses: 3, remaining: 0 })).toBe("验证成功，这是最后一次");
+    expect(orderSuccessText({ uses: 4, remaining: 0 })).toBe("验证成功");
+    expect(orderFailText({ error: "invalid" })).toContain("订单号格式不对");
     expect(orderFailText({ error: "invalid" })).toContain("我的订单");
-    expect(orderFailText({ error: "rate_limited" })).toContain("稍后再试");
-    expect(JSON.stringify(orderSuccessText({ remaining: 2 }))).not.toContain("paidVerified");
+    const blocked = ["次数已经用完", "暂时验证不了", "paidVerified"];
+    for (const text of [
+      orderSuccessText({ uses: 1, remaining: 2 }),
+      orderSuccessText({ uses: 4, remaining: 0 }),
+      orderFailText({ error: "exhausted" }),
+      orderFailText({ error: "rate_limited" }),
+      orderFailText(null),
+    ]) {
+      for (const word of blocked) expect(text).not.toContain(word);
+    }
   });
 });
 
-describe("order redeem", () => {
-  it("peeks, then posts one use for quiz mbti", async () => {
-    const calls: Array<{ url: string; method: string; body: string }> = [];
-    const fetchImpl: typeof fetch = async (input, init) => {
-      const url = String(input);
-      calls.push({ url, method: String(init?.method), body: String(init?.body ?? "") });
-      if (url.includes("/order/get")) return jsonResponse({ ok: false, error: "not_found" }, 404);
-      return jsonResponse({
-        ok: true,
-        remaining: 2,
-        max: 3,
-        uses: 1,
-        quiz: "mbti",
-        orderId: ORDER,
-        bound: true,
-        paidVerified: false,
+describe("on-device order unlock", () => {
+  it("unlocks a valid id with no order request and remembers the count per id", () => {
+    const store = installStorage();
+    const fetchImpl = vi.fn(() => {
+      throw new Error("order path must not fetch");
+    });
+    vi.stubGlobal("fetch", fetchImpl);
+    const first = submitOrderId(` 「p24 680135-7924.680135」 `);
+    expect(first).toEqual({
+      type: "unlock",
+      orderId: ORDER,
+      toast: "验证成功，还可以测 2 次",
+      paidVerified: false,
+    });
+    expect(shownOrderUses(ORDER)).toBe(1);
+    expect(JSON.parse(store.get(ORDER_USES_KEY) ?? "{}")).toEqual({ [ORDER]: 1 });
+    expect(store.has("soft_persimmon_order_uses")).toBe(false);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(submitOrderId(OTHER)?.type).toBe("unlock");
+    expect(shownOrderUses(ORDER)).toBe(1);
+    expect(shownOrderUses(OTHER)).toBe(1);
+  });
+
+  it("rejects 19-digit, repeating, and sequence ids locally", () => {
+    const store = installStorage();
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+    for (const raw of [P19, REPEAT, BLOCK, SEQUENCE, SEQUENCE_DOWN]) {
+      expect(submitOrderId(raw)).toEqual({
+        type: "reject",
+        message: "订单号格式不对，请到小红书「我的订单」里复制",
       });
-    };
-    expect(await redeemOrder(ORDER, fetchImpl)).toMatchObject({ ok: true, remaining: 2, uses: 1 });
-    expect(calls.map((call) => call.method)).toEqual(["GET", "POST"]);
-    expect(calls[0]?.url).toBe(
-      `${API_BASE}/order/get?quiz=mbti&orderId=${ORDER}`,
-    );
-    expect(calls[1]?.url).toBe(`${API_BASE}/order/redeem`);
-    expect(calls[1]?.body).toBe(JSON.stringify({ quiz: "mbti", orderId: ORDER }));
-    expect(calls.some((call) => call.url.includes("mbti-codes") || call.body.includes("mbti-codes"))).toBe(false);
-    expect(calls.some((call) => call.url.includes("mantledb.sh"))).toBe(false);
+    }
+    expect(store.size).toBe(0);
+    expect(shownOrderUses(ORDER)).toBe(0);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("reads a saved order without posting", async () => {
-    const methods: string[] = [];
-    const fetchImpl: typeof fetch = async (input, init) => {
-      methods.push(String(init?.method));
-      expect(String(input)).toContain("/order/get?quiz=mbti&orderId=");
-      return jsonResponse({ ok: true, remaining: 2, max: 3, uses: 1, quiz: "mbti", paidVerified: false });
-    };
-    expect(await peekOrder(ORDER, fetchImpl)).toMatchObject({ ok: true, uses: 1, remaining: 2 });
-    expect(methods).toEqual(["GET"]);
+  it("does not advance on refresh, continue, result restore, or 查看上次结果", () => {
+    installStorage();
+    expect(submitOrderId(ORDER)?.type).toBe("unlock");
+    const running: AccessSession = { kind: "order", phase: "running", id: ORDER };
+    const done: AccessSession = { kind: "order", phase: "result", id: ORDER };
+    expect(chargeForEntry("start", running)).toBe(false);
+    expect(planOrderRefresh(running, "#/quiz", false)).toBe("resume-quiz");
+    expect(planOrderRefresh(done, "#/quiz", true)).toBe("peek-result");
+    expect(planOrderRefresh(running, "", false)).toBe("leave");
+    expect(chargeForEntry("result", done)).toBe(false);
+    expect(chargeForEntry("demo", { kind: "", phase: "", id: "" })).toBe(false);
+    expect(shownOrderUses(ORDER)).toBe(1);
   });
 
-  it("spends two more uses on retake and rejects the fourth without posting", async () => {
-    let uses = 1;
-    const posts: string[] = [];
-    const fetchImpl: typeof fetch = async (input, init) => {
-      const url = String(input);
-      if (url.includes("/order/get")) {
-        return jsonResponse({ ok: true, remaining: 3 - uses, max: 3, uses, quiz: "mbti", paidVerified: false });
-      }
-      posts.push(String(init?.body));
-      uses += 1;
-      return jsonResponse({
-        ok: true,
-        remaining: 3 - uses,
-        max: 3,
-        uses,
-        quiz: "mbti",
-        orderId: ORDER,
-        bound: true,
-        paidVerified: false,
-      });
-    };
-    expect(await redeemOrder(ORDER, fetchImpl)).toMatchObject({ ok: true, remaining: 1, uses: 2 });
-    expect(await redeemOrder(ORDER, fetchImpl)).toMatchObject({ ok: true, remaining: 0, uses: 3 });
-    expect(await redeemOrder(ORDER, fetchImpl)).toMatchObject({ ok: false, error: "exhausted", remaining: 0 });
-    expect(posts).toHaveLength(2);
-    expect(posts.every((body) => body === JSON.stringify({ quiz: "mbti", orderId: ORDER }))).toBe(true);
-  });
-
-  it("does not post when the order belongs to another quiz", async () => {
-    const methods: string[] = [];
-    const fetchImpl: typeof fetch = async (_input, init) => {
-      methods.push(String(init?.method));
-      return jsonResponse({ ok: false, error: "bound_other_quiz" }, 403);
-    };
-    expect(await redeemOrder(ORDER, fetchImpl)).toMatchObject({ ok: false, error: "bound_other_quiz" });
-    expect(methods).toEqual(["GET"]);
-  });
-
-  it("rejects a fake order id before any request", async () => {
-    const calls: string[] = [];
-    const fetchImpl: typeof fetch = async (input) => {
-      calls.push(String(input));
-      return jsonResponse({ ok: true });
-    };
-    expect(await redeemOrder("P111111111111111111", fetchImpl)).toEqual({ ok: false, error: "invalid" });
-    expect(calls).toEqual([]);
-  });
-
-  it("keeps a timed-out redeem when the peek shows the use landed", async () => {
-    (globalThis as { __ORDER_RECONCILE_MS?: number }).__ORDER_RECONCILE_MS = 0;
-    let uses = 0;
-    let posts = 0;
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      if (url.includes("/order/redeem")) {
-        posts += 1;
-        uses = 1;
-        throw new Error("abort");
-      }
-      if (uses === 0) return jsonResponse({ ok: false, error: "not_found" }, 404);
-      return jsonResponse({ ok: true, remaining: 2, max: 3, uses: 1, quiz: "mbti", bound: true, paidVerified: false });
-    };
-    expect(await redeemOrder(ORDER, fetchImpl)).toMatchObject({ ok: true, remaining: 2, uses: 1 });
-    expect(posts).toBe(1);
-    expect(decideTimeout(0, { ok: true, uses: 1 })).toBe("accept");
-    expect(decideTimeout(0, { ok: false, error: "not_found" })).toBe("retry");
-  });
-
-  it("posts again only when a timed-out redeem did not increase the use count", async () => {
-    (globalThis as { __ORDER_RECONCILE_MS?: number }).__ORDER_RECONCILE_MS = 0;
-    let posts = 0;
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      if (url.includes("/order/redeem")) {
-        posts += 1;
-        if (posts === 1) throw new Error("abort");
-        return jsonResponse({ ok: true, remaining: 2, max: 3, uses: 1, quiz: "mbti", paidVerified: false });
-      }
-      return jsonResponse({ ok: false, error: "not_found" }, 404);
-    };
-    expect(await redeemOrder(ORDER, fetchImpl)).toMatchObject({ ok: true, remaining: 2, uses: 1 });
-    expect(posts).toBe(2);
+  it("advances on 再测一次 and still unlocks after three displayed starts", () => {
+    installStorage();
+    const running: AccessSession = { kind: "order", phase: "running", id: ORDER };
+    expect(chargeForEntry("retake", running)).toBe(true);
+    expect(submitOrderId(ORDER)).toMatchObject({ toast: "验证成功，还可以测 2 次", paidVerified: false });
+    expect(submitOrderId(ORDER)).toMatchObject({ toast: "验证成功，还可以测 1 次", paidVerified: false });
+    expect(submitOrderId(ORDER)).toMatchObject({ toast: "验证成功，这是最后一次", paidVerified: false });
+    const later = submitOrderId(ORDER);
+    expect(later).toEqual({
+      type: "unlock",
+      orderId: ORDER,
+      toast: "验证成功",
+      paidVerified: false,
+    });
+    expect(shownOrderUses(ORDER)).toBe(4);
+    expect(later && later.type === "unlock" ? later.toast : "").not.toMatch(/用完|暂时验证不了/);
   });
 });
