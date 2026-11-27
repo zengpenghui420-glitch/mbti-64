@@ -152,7 +152,7 @@ export function chargeForEntry(action: "start" | "retake" | "result" | "demo", s
   return true;
 }
 
-/** Refresh of an order attempt never redeems. A result refresh only peeks. */
+/** Refresh, continue, and a saved result leave the on-device order display unchanged. */
 export function planOrderRefresh(
   session: AccessSession,
   hash: string,

@@ -23,7 +23,7 @@ import {
   shouldAutoRedeem,
   successToast,
 } from "@/lib/access";
-import { classifyInput, orderFailText, orderFormatError, orderSuccessText, peekOrder, redeemOrder } from "@/lib/order";
+import { classifyInput, orderFailText, submitOrderId } from "@/lib/order";
 import { DEMO_CODE, synthesizeAnswers } from "@/lib/demo";
 import { answerQuestion, stepQuestion } from "@/lib/quiz-nav";
 import { scoreAnswers } from "@/lib/score";
@@ -180,11 +180,30 @@ export default function App() {
       setDialogOpen(true);
       return;
     }
-    if (cls.type === "order-invalid" || (cls.type === "order" && orderFormatError(cls.orderId))) {
+    if (cls.type === "order" || cls.type === "order-invalid") {
+      if (!locked) {
+        if (busyRef.current) return;
+        busyRef.current = true;
+      }
+      setDialogBusy(true);
+      setDialogError("");
+      const decided = submitOrderId(raw);
+      if (!decided || decided.type === "reject") {
+        busyRef.current = false;
+        setDialogBusy(false);
+        setDialogError(decided?.type === "reject" ? decided.message : orderFailText({ error: "invalid" }));
+        setDialogOpen(true);
+        return;
+      }
+      rememberOrder(decided.orderId);
+      paidRef.current = true;
+      setUnlocked(true);
+      setDialogOpen(false);
+      setToast(decided.toast);
+      if (pendingRef.current === "retake") beginRetake();
+      else beginStart();
       busyRef.current = false;
       setDialogBusy(false);
-      setDialogError(orderFailText({ error: "invalid" }));
-      setDialogOpen(true);
       return;
     }
     if (!locked) {
@@ -194,35 +213,21 @@ export default function App() {
     setDialogBusy(true);
     setDialogError("");
     try {
-      if (cls.type === "order") {
-        const redeemed = await redeemOrder(cls.orderId);
-        if (!redeemed.ok) {
-          setDialogError(orderFailText(redeemed));
-          setDialogOpen(true);
-          return;
-        }
-        rememberOrder(cls.orderId);
-        paidRef.current = true;
-        setUnlocked(true);
-        setDialogOpen(false);
-        setToast(orderSuccessText(redeemed));
-      } else {
-        const redeemed = await redeemCode(cls.code);
-        if (!redeemed.ok) {
-          setDialogError(redeemErrorText(redeemed.reason));
-          setDialogOpen(true);
-          return;
-        }
-        rememberCode(cls.code);
-        paidRef.current = true;
-        setUnlocked(true);
-        setDialogOpen(false);
-        setToast(successToast(redeemed.remaining));
+      const redeemed = await redeemCode(cls.code);
+      if (!redeemed.ok) {
+        setDialogError(redeemErrorText(redeemed.reason));
+        setDialogOpen(true);
+        return;
       }
+      rememberCode(cls.code);
+      paidRef.current = true;
+      setUnlocked(true);
+      setDialogOpen(false);
+      setToast(successToast(redeemed.remaining));
       if (pendingRef.current === "retake") beginRetake();
       else beginStart();
     } catch {
-      setDialogError(cls.type === "order" ? orderFailText(null) : redeemErrorText("network"));
+      setDialogError(redeemErrorText("network"));
       setDialogOpen(true);
     } finally {
       busyRef.current = false;
@@ -248,10 +253,7 @@ export default function App() {
       const session = readAccessSession();
       const saved = loadState();
       const refresh = planOrderRefresh(session, hash, isCompleteAttempt(saved));
-      if (refresh === "peek-result") {
-        if (/^P\d{18}$/.test(session.id)) void peekOrder(session.id).catch(() => undefined);
-        return;
-      }
+      if (refresh === "peek-result") return;
       if (refresh === "resume-quiz") {
         paidRef.current = true;
         setUnlocked(true);
